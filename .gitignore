@@ -9,5 +9,7 @@ htmlcov/
 pyproject.toml
 
 # Debian build artifacts
-debian/
+debian/.debhelper/
+debian/tmp/
+debian/wb-zigbee2mqtt/
 .pybuild/
