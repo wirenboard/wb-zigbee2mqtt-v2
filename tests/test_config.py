@@ -3,7 +3,7 @@ import json
 import jsonschema
 import pytest
 
-from wb_zigbee2mqtt.config import Config, load_config
+from wb.zigbee2mqtt.config import Config, load_config
 
 
 def test_load_config_missing_file() -> None:
