@@ -17,13 +17,25 @@
             "type": "string",
             "default": "zigbee2mqtt"
         },
+        "device_id": {
+            "title": "WB device ID",
+            "type": "string",
+            "default": "zigbee2mqtt"
+        },
+        "device_name": {
+            "title": "WB device name",
+            "type": "string",
+            "default": "Zigbee2MQTT"
+        }
     },
     "required": ["broker_url", "zigbee2mqtt_base_topic"],
     "translations": {
         "ru": {
             "WB Zigbee2MQTT Bridge": "Мост Zigbee2MQTT для Wiren Board",
             "MQTT Broker URL": "URL MQTT-брокера",
-            "Zigbee2MQTT base topic": "Базовый топик Zigbee2MQTT"
+            "Zigbee2MQTT base topic": "Базовый топик Zigbee2MQTT",
+            "WB device ID": "ID устройства в WB",
+            "WB device name": "Имя устройства в WB"
         }
     }
 }
