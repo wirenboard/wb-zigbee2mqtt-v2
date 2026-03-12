@@ -3,6 +3,6 @@
 
 import sys
 
-from wb_zigbee2mqtt.main import main
+from wb.zigbee2mqtt.main import main
 
 sys.exit(main(sys.argv))
