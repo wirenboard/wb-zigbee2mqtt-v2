@@ -7,7 +7,6 @@ class BridgeInfo:
     version: str
     permit_join: bool
     permit_join_end: Optional[int]
-    log_level: str
 
 
 class BridgeState:

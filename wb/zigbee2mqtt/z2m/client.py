@@ -78,7 +78,6 @@ class Z2MClient:
             version=data.get("version", ""),
             permit_join=data.get("permit_join", False),
             permit_join_end=data.get("permit_join_end"),
-            log_level=data.get("log_level", ""),
         )
         self._on_bridge_info(info)
 

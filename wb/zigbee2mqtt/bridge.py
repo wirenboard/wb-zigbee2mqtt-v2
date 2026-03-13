@@ -31,10 +31,12 @@ class Bridge:
             on_devices=self._on_devices,
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
+        self._log_min_level = log_min_level
         self._log_min_rank = LOG_LEVEL_RANK.get(log_min_level, LOG_LEVEL_RANK["warning"])
 
     def subscribe(self) -> None:
         self._wb.publish_bridge_device()
+        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, self._log_min_level)
         self._z2m.subscribe()
         self._wb.subscribe_bridge_commands(
             on_permit_join=self._z2m.set_permit_join,
@@ -43,6 +45,7 @@ class Bridge:
 
     def republish(self) -> None:
         self._wb.publish_bridge_device()
+        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, self._log_min_level)
 
     def _on_bridge_state(self, state: str) -> None:
         logger.info("Bridge state: %s", state)
@@ -51,7 +54,6 @@ class Bridge:
     def _on_bridge_info(self, info: BridgeInfo) -> None:
         logger.info("Bridge info: version=%s, permit_join=%s", info.version, info.permit_join)
         self._wb.publish_bridge_control(BridgeControl.VERSION, info.version)
-        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, info.log_level)
         self._wb.publish_bridge_control(BridgeControl.PERMIT_JOIN, "1" if info.permit_join else "0")
 
     def _on_bridge_log(self, level: str, message: str) -> None:
