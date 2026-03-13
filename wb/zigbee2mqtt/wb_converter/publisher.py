@@ -52,6 +52,7 @@ class WbPublisher:
         self._publish_retain(f"{DEVICES_PREFIX}/{device_id}/meta", json.dumps(device_meta))
         for control_id, meta in controls.items():
             self._publish_control_meta(device_id, control_id, meta)
+            self._publish_retain(f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}", " ")
 
     def _publish_control_meta(self, device_id: str, control_id: str, meta: ControlMeta) -> None:
         payload: dict = {"type": meta.type, "readonly": meta.readonly}
