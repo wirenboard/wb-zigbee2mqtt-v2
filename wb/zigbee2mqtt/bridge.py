@@ -5,11 +5,9 @@ from wb_common.mqtt_client import MQTTClient
 from .wb_converter.controls import BridgeControl
 from .wb_converter.publisher import WbPublisher
 from .z2m.client import Z2MClient
-from .z2m.model import BridgeInfo
+from .z2m.model import BridgeInfo, BridgeLogLevel
 
 logger = logging.getLogger(__name__)
-
-LOG_LEVEL_RANK = {"debug": 0, "info": 1, "warning": 2, "error": 3}
 
 
 class Bridge:
@@ -32,7 +30,7 @@ class Bridge:
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
         self._log_min_level = log_min_level
-        self._log_min_rank = LOG_LEVEL_RANK.get(log_min_level, LOG_LEVEL_RANK["warning"])
+        self._log_min_rank = BridgeLogLevel.RANK.get(log_min_level, BridgeLogLevel.RANK[BridgeLogLevel.WARNING])
 
     def subscribe(self) -> None:
         self._wb.publish_bridge_device()
@@ -57,7 +55,7 @@ class Bridge:
         self._wb.publish_bridge_control(BridgeControl.PERMIT_JOIN, "1" if info.permit_join else "0")
 
     def _on_bridge_log(self, level: str, message: str) -> None:
-        if LOG_LEVEL_RANK.get(level, 0) >= self._log_min_rank:
+        if BridgeLogLevel.RANK.get(level, 0) >= self._log_min_rank:
             self._wb.publish_bridge_control(BridgeControl.LOG, message)
 
     def _on_devices(self, count: int) -> None:
