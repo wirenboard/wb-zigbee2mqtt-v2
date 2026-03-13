@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Callable
 
@@ -47,16 +48,19 @@ class WbPublisher:
         self._client.message_callback_add(update_devices_topic, handle_update_devices)
 
     def _publish_device(self, device_id: str, name: str, controls: dict[str, ControlMeta]) -> None:
-        self._publish_retain(f"{DEVICES_PREFIX}/{device_id}/meta/name", name)
+        device_meta = {"title": {"en": name, "ru": name}}
+        self._publish_retain(f"{DEVICES_PREFIX}/{device_id}/meta", json.dumps(device_meta))
         for control_id, meta in controls.items():
             self._publish_control_meta(device_id, control_id, meta)
 
     def _publish_control_meta(self, device_id: str, control_id: str, meta: ControlMeta) -> None:
-        prefix = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}/meta"
-        self._publish_retain(f"{prefix}/type", meta.type)
-        self._publish_retain(f"{prefix}/readonly", "1" if meta.readonly else "0")
+        payload: dict = {"type": meta.type, "readonly": meta.readonly}
         if meta.order is not None:
-            self._publish_retain(f"{prefix}/order", str(meta.order))
+            payload["order"] = meta.order
+        if meta.title:
+            payload["title"] = meta.title
+        topic = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}/meta"
+        self._publish_retain(topic, json.dumps(payload))
 
     def _publish_retain(self, topic: str, value: str) -> None:
         self._client.publish(topic, value, retain=True, qos=1)
