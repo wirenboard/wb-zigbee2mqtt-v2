@@ -57,14 +57,14 @@ BRIDGE_CONTROLS: dict[str, ControlMeta] = {
     ),
     BridgeControl.LAST_JOINED: ControlMeta(
         type="text", readonly=True, order=8,
-        title={"en": "Last joined", "ru": "Последнее подключение"},
+        title={"en": "Last joined", "ru": "Последнее подключенное"},
     ),
     BridgeControl.LAST_LEFT: ControlMeta(
         type="text", readonly=True, order=9,
-        title={"en": "Last left", "ru": "Последний выход из сети"},
+        title={"en": "Last left", "ru": "Последнее вышедшее из сети"},
     ),
     BridgeControl.LAST_REMOVED: ControlMeta(
         type="text", readonly=True, order=10,
-        title={"en": "Last removed", "ru": "Последнее удаление"},
+        title={"en": "Last removed", "ru": "Последнее удаленное"},
     ),
 }
