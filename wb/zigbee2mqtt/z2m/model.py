@@ -15,6 +15,18 @@ class BridgeState:
     ERROR = "error"
 
 
+class DeviceEventType:
+    JOINED = "joined"
+    LEFT = "left"
+    REMOVED = "removed"
+
+
+@dataclass
+class DeviceEvent:
+    type: str
+    name: str
+
+
 class BridgeLogLevel:
     DEBUG = "debug"
     INFO = "info"

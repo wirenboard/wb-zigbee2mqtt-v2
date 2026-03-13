@@ -10,6 +10,9 @@ class BridgeControl:
     PERMIT_JOIN = "permit_join"
     UPDATE_DEVICES = "update_devices"
     DEVICE_COUNT = "device_count"
+    LAST_JOINED = "last_joined"
+    LAST_LEFT = "last_left"
+    LAST_REMOVED = "last_removed"
 
 
 @dataclass
@@ -31,4 +34,7 @@ BRIDGE_CONTROLS: dict[str, ControlMeta] = {
     BridgeControl.PERMIT_JOIN: ControlMeta(type="switch", readonly=False, title="Permit join", order=5),
     BridgeControl.UPDATE_DEVICES: ControlMeta(type="pushbutton", readonly=False, title="Update devices", order=6),
     BridgeControl.DEVICE_COUNT: ControlMeta(type="value", readonly=True, title="Devices", order=7),
+    BridgeControl.LAST_JOINED: ControlMeta(type="text", readonly=True, title="Last joined", order=8),
+    BridgeControl.LAST_LEFT: ControlMeta(type="text", readonly=True, title="Last left", order=9),
+    BridgeControl.LAST_REMOVED: ControlMeta(type="text", readonly=True, title="Last removed", order=10),
 }

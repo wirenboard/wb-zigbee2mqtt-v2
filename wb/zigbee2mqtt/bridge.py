@@ -5,7 +5,7 @@ from wb_common.mqtt_client import MQTTClient
 from .wb_converter.controls import BridgeControl
 from .wb_converter.publisher import WbPublisher
 from .z2m.client import Z2MClient
-from .z2m.model import BridgeInfo, BridgeLogLevel
+from .z2m.model import BridgeInfo, BridgeLogLevel, DeviceEvent, DeviceEventType
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class Bridge:
             on_bridge_info=self._on_bridge_info,
             on_bridge_log=self._on_bridge_log,
             on_devices=self._on_devices,
+            on_device_event=self._on_device_event,
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
         self._bridge_log_min_level = bridge_log_min_level
@@ -61,3 +62,14 @@ class Bridge:
     def _on_devices(self, count: int) -> None:
         logger.info("Devices: %d", count)
         self._wb.publish_bridge_control(BridgeControl.DEVICE_COUNT, str(count))
+
+    def _on_device_event(self, event: DeviceEvent) -> None:
+        logger.info("Device event: %s %s", event.type, event.name)
+        control_map = {
+            DeviceEventType.JOINED: BridgeControl.LAST_JOINED,
+            DeviceEventType.LEFT: BridgeControl.LAST_LEFT,
+            DeviceEventType.REMOVED: BridgeControl.LAST_REMOVED,
+        }
+        control = control_map.get(event.type)
+        if control:
+            self._wb.publish_bridge_control(control, event.name)
