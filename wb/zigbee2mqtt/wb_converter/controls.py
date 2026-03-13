@@ -9,6 +9,7 @@ class BridgeControl:
     LOG = "log"
     PERMIT_JOIN = "permit_join"
     UPDATE_DEVICES = "update_devices"
+    DEVICE_COUNT = "device_count"
 
 
 @dataclass
@@ -29,4 +30,5 @@ BRIDGE_CONTROLS: dict[str, ControlMeta] = {
     BridgeControl.LOG: ControlMeta(type="text", readonly=True, title="Log", order=4),
     BridgeControl.PERMIT_JOIN: ControlMeta(type="switch", readonly=False, title="Permit join", order=5),
     BridgeControl.UPDATE_DEVICES: ControlMeta(type="pushbutton", readonly=False, title="Update devices", order=6),
+    BridgeControl.DEVICE_COUNT: ControlMeta(type="value", readonly=True, title="Devices", order=7),
 }

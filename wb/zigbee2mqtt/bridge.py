@@ -9,6 +9,8 @@ from .z2m.model import BridgeInfo
 
 logger = logging.getLogger(__name__)
 
+LOG_LEVEL_RANK = {"debug": 0, "info": 1, "warning": 2, "error": 3}
+
 
 class Bridge:
     """Orchestrates data flow between zigbee2mqtt and the Wiren Board MQTT broker.
@@ -17,15 +19,19 @@ class Bridge:
     and forwards WB commands back to zigbee2mqtt.
     """
 
-    def __init__(self, mqtt_client: MQTTClient, base_topic: str, device_id: str, device_name: str) -> None:
+    def __init__(
+        self, mqtt_client: MQTTClient, base_topic: str, device_id: str, device_name: str, log_min_level: str
+    ) -> None:
         self._z2m = Z2MClient(
             mqtt_client=mqtt_client,
             base_topic=base_topic,
             on_bridge_state=self._on_bridge_state,
             on_bridge_info=self._on_bridge_info,
             on_bridge_log=self._on_bridge_log,
+            on_devices=self._on_devices,
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
+        self._log_min_rank = LOG_LEVEL_RANK.get(log_min_level, LOG_LEVEL_RANK["warning"])
 
     def subscribe(self) -> None:
         self._wb.publish_bridge_device()
@@ -48,5 +54,10 @@ class Bridge:
         self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, info.log_level)
         self._wb.publish_bridge_control(BridgeControl.PERMIT_JOIN, "1" if info.permit_join else "0")
 
-    def _on_bridge_log(self, message: str) -> None:
-        self._wb.publish_bridge_control(BridgeControl.LOG, message)
+    def _on_bridge_log(self, level: str, message: str) -> None:
+        if LOG_LEVEL_RANK.get(level, 0) >= self._log_min_rank:
+            self._wb.publish_bridge_control(BridgeControl.LOG, message)
+
+    def _on_devices(self, count: int) -> None:
+        logger.info("Devices: %d", count)
+        self._wb.publish_bridge_control(BridgeControl.DEVICE_COUNT, str(count))
