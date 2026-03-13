@@ -15,6 +15,11 @@ class BridgeState:
     ERROR = "error"
 
 
+class Z2MEventType:
+    DEVICE_JOINED = "device_joined"
+    DEVICE_LEAVE = "device_leave"
+
+
 class DeviceEventType:
     JOINED = "joined"
     LEFT = "left"

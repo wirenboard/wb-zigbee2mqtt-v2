@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 from wb_common.mqtt_client import MQTTClient
 
-from .model import BridgeInfo, BridgeState, DeviceEvent, DeviceEventType
+from .model import BridgeInfo, BridgeState, DeviceEvent, DeviceEventType, Z2MEventType
 
 logger = logging.getLogger(__name__)
 
@@ -34,26 +34,17 @@ class Z2MClient:
         self._on_device_event = on_device_event
 
     def subscribe(self) -> None:
-        state_topic = f"{self._base_topic}/bridge/state"
-        info_topic = f"{self._base_topic}/bridge/info"
-        log_topic = f"{self._base_topic}/bridge/logging"
-        devices_topic = f"{self._base_topic}/bridge/devices"
-        event_topic = f"{self._base_topic}/bridge/event"
-        remove_response_topic = f"{self._base_topic}/bridge/response/device/remove"
-
-        self._client.subscribe(state_topic)
-        self._client.subscribe(info_topic)
-        self._client.subscribe(log_topic)
-        self._client.subscribe(devices_topic)
-        self._client.subscribe(event_topic)
-        self._client.subscribe(remove_response_topic)
-
-        self._client.message_callback_add(state_topic, self._handle_bridge_state)
-        self._client.message_callback_add(info_topic, self._handle_bridge_info)
-        self._client.message_callback_add(log_topic, self._handle_bridge_log)
-        self._client.message_callback_add(devices_topic, self._handle_bridge_devices)
-        self._client.message_callback_add(event_topic, self._handle_bridge_event)
-        self._client.message_callback_add(remove_response_topic, self._handle_device_remove_response)
+        subscriptions = [
+            (f"{self._base_topic}/bridge/state", self._handle_bridge_state),
+            (f"{self._base_topic}/bridge/info", self._handle_bridge_info),
+            (f"{self._base_topic}/bridge/logging", self._handle_bridge_log),
+            (f"{self._base_topic}/bridge/devices", self._handle_bridge_devices),
+            (f"{self._base_topic}/bridge/event", self._handle_bridge_event),
+            (f"{self._base_topic}/bridge/response/device/remove", self._handle_device_remove_response),
+        ]
+        for topic, handler in subscriptions:
+            self._client.subscribe(topic)
+            self._client.message_callback_add(topic, handler)
 
     def set_permit_join(self, enabled: bool) -> None:
         time = PERMIT_JOIN_TIME_SEC if enabled else PERMIT_JOIN_TIME_SEC_DISABLED
@@ -76,12 +67,9 @@ class Z2MClient:
         self._on_bridge_state(state)
 
     def _handle_bridge_info(self, _client: object, _userdata: object, message: object) -> None:
-        try:
-            data = json.loads(message.payload.decode("utf-8"))
-        except json.JSONDecodeError:
-            logger.warning("Failed to parse bridge/info payload")
+        data = _parse_json_payload(message, "bridge/info")
+        if data is None:
             return
-
         info = BridgeInfo(
             version=data.get("version", ""),
             permit_join=data.get("permit_join", False),
@@ -100,42 +88,44 @@ class Z2MClient:
         self._on_bridge_log(log_level, log_message or "")
 
     def _handle_bridge_devices(self, _client: object, _userdata: object, message: object) -> None:
-        try:
-            devices = json.loads(message.payload.decode("utf-8"))
-        except json.JSONDecodeError:
-            logger.warning("Failed to parse bridge/devices payload")
+        data = _parse_json_payload(message, "bridge/devices")
+        if data is None:
             return
-        count = sum(1 for d in devices if d.get("type") != "Coordinator")
+        count = sum(1 for d in data if d.get("type") != "Coordinator")
         self._on_devices(count)
 
     def _handle_bridge_event(self, _client: object, _userdata: object, message: object) -> None:
-        try:
-            data = json.loads(message.payload.decode("utf-8"))
-        except json.JSONDecodeError:
-            logger.warning("Failed to parse bridge/event payload")
+        data = _parse_json_payload(message, "bridge/event")
+        if data is None:
             return
         event_type = data.get("type")
         device_data = data.get("data", {})
-        if event_type == "device_joined":
+        event_map = {
+            Z2MEventType.DEVICE_JOINED: DeviceEventType.JOINED,
+            Z2MEventType.DEVICE_LEAVE: DeviceEventType.LEFT,
+        }
+        mapped = event_map.get(event_type)
+        if mapped:
             self._on_device_event(DeviceEvent(
-                type=DeviceEventType.JOINED,
-                name=_resolve_device_name(device_data),
-            ))
-        elif event_type == "device_leave":
-            self._on_device_event(DeviceEvent(
-                type=DeviceEventType.LEFT,
+                type=mapped,
                 name=_resolve_device_name(device_data),
             ))
 
     def _handle_device_remove_response(self, _client: object, _userdata: object, message: object) -> None:
-        try:
-            data = json.loads(message.payload.decode("utf-8"))
-        except json.JSONDecodeError:
-            logger.warning("Failed to parse bridge/response/device/remove payload")
+        data = _parse_json_payload(message, "bridge/response/device/remove")
+        if data is None:
             return
         if data.get("status") == "ok":
             name = data.get("data", {}).get("id", "")
             self._on_device_event(DeviceEvent(type=DeviceEventType.REMOVED, name=name))
+
+
+def _parse_json_payload(message: object, topic_name: str) -> Optional[dict]:
+    try:
+        return json.loads(message.payload.decode("utf-8"))
+    except json.JSONDecodeError:
+        logger.warning("Failed to parse %s payload", topic_name)
+        return None
 
 
 def _resolve_device_name(device_data: dict) -> str:

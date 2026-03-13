@@ -9,6 +9,12 @@ from .z2m.model import BridgeInfo, BridgeLogLevel, DeviceEvent, DeviceEventType
 
 logger = logging.getLogger(__name__)
 
+_EVENT_TYPE_TO_CONTROL = {
+    DeviceEventType.JOINED: BridgeControl.LAST_JOINED,
+    DeviceEventType.LEFT: BridgeControl.LAST_LEFT,
+    DeviceEventType.REMOVED: BridgeControl.LAST_REMOVED,
+}
+
 
 class Bridge:
     """Orchestrates data flow between zigbee2mqtt and the Wiren Board MQTT broker.
@@ -65,11 +71,6 @@ class Bridge:
 
     def _on_device_event(self, event: DeviceEvent) -> None:
         logger.info("Device event: %s %s", event.type, event.name)
-        control_map = {
-            DeviceEventType.JOINED: BridgeControl.LAST_JOINED,
-            DeviceEventType.LEFT: BridgeControl.LAST_LEFT,
-            DeviceEventType.REMOVED: BridgeControl.LAST_REMOVED,
-        }
-        control = control_map.get(event.type)
+        control = _EVENT_TYPE_TO_CONTROL.get(event.type)
         if control:
             self._wb.publish_bridge_control(control, event.name)
