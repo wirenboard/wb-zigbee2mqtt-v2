@@ -4,12 +4,14 @@ from typing import Optional
 
 @dataclass
 class ControlMeta:
+      """Metadata describing a WB MQTT control (type, readonly, title, order)"""
     type: str
     readonly: bool
     title: Optional[str] = None
     order: int = 0
 
 
+# Control metadata for the zigbee2mqtt bridge virtual device
 BRIDGE_CONTROLS: dict[str, ControlMeta] = {
     "state": ControlMeta(type="text", readonly=True, title="State", order=1),
     "version": ControlMeta(type="text", readonly=True, title="Version", order=2),
