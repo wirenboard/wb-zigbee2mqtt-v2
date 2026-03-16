@@ -25,7 +25,7 @@ class ControlMeta:
     title: dict = field(default_factory=dict)
 
 
-# Control metadata for the zigbee2mqtt bridge virtual device
+# Control metadata for the zigbee2mqtt bridge virtual device with translations for English and Russian
 BRIDGE_CONTROLS: dict[str, ControlMeta] = {
     BridgeControl.STATE: ControlMeta(
         type="text", readonly=True, order=1,
