@@ -13,6 +13,8 @@ class BridgeControl:
     LAST_JOINED = "Last joined"
     LAST_LEFT = "Last left"
     LAST_REMOVED = "Last removed"
+    LAST_SEEN = "Last seen"
+    MESSAGES_RECEIVED = "Messages received"
 
 
 @dataclass
@@ -59,12 +61,20 @@ BRIDGE_CONTROLS: dict[str, ControlMeta] = {
         type="pushbutton", readonly=False, order=8,
         title={"en": "Update devices", "ru": "Обновить устройства"},
     ),
-    BridgeControl.LOG_LEVEL: ControlMeta(
+    BridgeControl.LAST_SEEN: ControlMeta(
         type="text", readonly=True, order=9,
+        title={"en": "Last seen", "ru": "Последняя активность"},
+    ),
+    BridgeControl.MESSAGES_RECEIVED: ControlMeta(
+        type="value", readonly=True, order=10,
+        title={"en": "Messages received", "ru": "Сообщений получено"},
+    ),
+    BridgeControl.LOG_LEVEL: ControlMeta(
+        type="text", readonly=True, order=11,
         title={"en": "Log level", "ru": "Уровень логов"},
     ),
     BridgeControl.LOG: ControlMeta(
-        type="text", readonly=True, order=10,
+        type="text", readonly=True, order=12,
         title={"en": "Log", "ru": "Лог"},
     ),
 }
