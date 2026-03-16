@@ -1,4 +1,4 @@
-# Разработка wb-zigbee2mqtt-v2
+# План разработки wb-zigbee2mqtt-v2
 
 
 ## Этапы разработки
@@ -200,7 +200,7 @@ wb-zigbee2mqtt-v2/
 │   └── wb-zigbee2mqtt.conf      — дефолтный конфиг (JSON, → /usr/lib/wb-zigbee2mqtt/configs/)
 ├── docs/
 │   ├── arc42.md                 — архитектура в формате arc42
-│   ├── architecture.md          — этапы разработки, структура, модули (этот файл)
+│   ├── development-plan.md      — план разработки, структура, модули (этот файл)
 │   └── v1-analysis.md           — анализ предыдущей версии (JS/wb-rules)
 ├── debian/
 │   ├── control
