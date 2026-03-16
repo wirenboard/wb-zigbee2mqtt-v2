@@ -26,6 +26,13 @@ class WbPublisher:
         topic = f"{DEVICES_PREFIX}/{self._device_id}/controls/{control_id}"
         self._publish_retain(topic, value)
 
+    def publish_device(self, device_id: str, name: str, controls: dict[str, ControlMeta]) -> None:
+        self._publish_device(device_id, name, controls)
+
+    def publish_device_control(self, device_id: str, control_id: str, value: str) -> None:
+        topic = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}"
+        self._publish_retain(topic, value)
+
     def subscribe_bridge_commands(
         self,
         on_permit_join: Callable[[bool], None],

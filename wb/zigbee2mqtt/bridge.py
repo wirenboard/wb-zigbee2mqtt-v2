@@ -1,13 +1,16 @@
+import json
 import logging
+import re
 import time
 from datetime import datetime
 
 from wb_common.mqtt_client import MQTTClient
 
 from .wb_converter.controls import BridgeControl
+from .wb_converter.expose_mapper import map_exposes_to_controls
 from .wb_converter.publisher import WbPublisher
 from .z2m.client import Z2MClient
-from .z2m.model import BridgeInfo, BridgeLogLevel, DeviceEvent, DeviceEventType
+from .z2m.model import BridgeInfo, BridgeLogLevel, DeviceEvent, DeviceEventType, Z2MDevice
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,14 @@ class Bridge:
             on_bridge_log=self._on_bridge_log,
             on_devices=self._on_devices,
             on_device_event=self._on_device_event,
+            on_device_state=self._on_device_state,
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
         self._bridge_log_min_level = bridge_log_min_level
         self._log_min_rank = BridgeLogLevel.RANK.get(bridge_log_min_level, BridgeLogLevel.RANK[BridgeLogLevel.WARNING])
         self._messages_received = 0
         self._last_stats_publish = 0.0
+        self._known_devices: dict[str, Z2MDevice] = {}  # friendly_name → Z2MDevice
 
     def subscribe(self) -> None:
         self._wb.publish_bridge_device()
@@ -83,9 +88,45 @@ class Bridge:
         if BridgeLogLevel.RANK.get(level, 0) >= self._log_min_rank:
             self._wb.publish_bridge_control(BridgeControl.LOG, message)
 
-    def _on_devices(self, count: int) -> None:
-        logger.info("Devices: %d", count)
-        self._wb.publish_bridge_control(BridgeControl.DEVICE_COUNT, str(count))
+    def _on_devices(self, devices: list) -> None:
+        logger.info("Devices: %d", len(devices))
+        self._wb.publish_bridge_control(BridgeControl.DEVICE_COUNT, str(len(devices)))
+        self._update_stats()
+        for device in devices:
+            self._register_device(device)
+
+    def _register_device(self, device: Z2MDevice) -> None:
+        if device.friendly_name in self._known_devices:
+            return
+        controls = map_exposes_to_controls(device.exposes)
+        if not controls:
+            logger.warning("Device '%s' has no exposes, skipping", device.friendly_name)
+            return
+        device_id = _sanitize_device_id(device.friendly_name)
+        display_name = device.friendly_name
+        logger.info("Registering device '%s' as '%s' (%d controls)", display_name, device_id, len(controls))
+        self._known_devices[device.friendly_name] = device
+        self._wb.publish_device(device_id, display_name, controls)
+        self._z2m.subscribe_device(device.friendly_name)
+        self._z2m.request_device_state(device.friendly_name)
+
+    def _on_device_state(self, friendly_name: str, state: dict) -> None:
+        device = self._known_devices.get(friendly_name)
+        if device is None:
+            return
+        device_id = _sanitize_device_id(friendly_name)
+        controls = map_exposes_to_controls(device.exposes)
+        for prop in controls:
+            if prop in state:
+                value = state[prop]
+                self._wb.publish_device_control(device_id, prop, _format_value(value))
+        if "last_seen" in state:
+            last_seen = state["last_seen"]
+            if isinstance(last_seen, (int, float)) and last_seen > 1e12:
+                last_seen = last_seen / 1000
+            self._wb.publish_device_control(
+                device_id, "last_seen", datetime.fromtimestamp(last_seen).strftime("%Y-%m-%d %H:%M:%S"),
+            )
         self._update_stats()
 
     def _on_device_event(self, event: DeviceEvent) -> None:
@@ -94,3 +135,18 @@ class Bridge:
         if control:
             self._wb.publish_bridge_control(control, event.name)
         self._update_stats()
+
+
+def _sanitize_device_id(friendly_name: str) -> str:
+    """Convert friendly_name to a valid WB device ID (alphanumeric + underscores)"""
+    return re.sub(r"[^a-zA-Z0-9_]", "_", friendly_name)
+
+
+def _format_value(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, dict):
+        return json.dumps(value)
+    return str(value)

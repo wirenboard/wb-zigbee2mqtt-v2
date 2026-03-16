@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 from wb_common.mqtt_client import MQTTClient
 
-from .model import BridgeInfo, BridgeState, DeviceEvent, DeviceEventType, Z2MEventType
+from .model import BridgeInfo, BridgeState, DeviceEvent, DeviceEventType, Z2MDevice, Z2MEventType
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,9 @@ class Z2MClient:
         on_bridge_state: Callable[[str], None],
         on_bridge_info: Callable[[BridgeInfo], None],
         on_bridge_log: Callable[[str, str], None],
-        on_devices: Callable[[int], None],
+        on_devices: Callable[[list], None],
         on_device_event: Callable[[DeviceEvent], None],
+        on_device_state: Callable[[str, dict], None],
     ) -> None:
         """
         Args:
@@ -32,8 +33,9 @@ class Z2MClient:
             on_bridge_state: called with bridge state ("online", "offline", "error")
             on_bridge_info: called with BridgeInfo on bridge/info updates
             on_bridge_log: called with (level, message) on bridge/logging updates
-            on_devices: called with device count (excluding Coordinator)
+            on_devices: called with list of Z2MDevice (excluding Coordinator)
             on_device_event: called with DeviceEvent on join/leave/remove
+            on_device_state: called with (friendly_name, state_dict) on device state updates
         """
         self._client = mqtt_client
         self._base_topic = base_topic
@@ -42,6 +44,8 @@ class Z2MClient:
         self._on_bridge_log = on_bridge_log
         self._on_devices = on_devices
         self._on_device_event = on_device_event
+        self._on_device_state = on_device_state
+        self._subscribed_devices: set[str] = set()
 
     def subscribe(self) -> None:
         """Subscribe to all zigbee2mqtt bridge topics and register message handlers"""
@@ -66,6 +70,26 @@ class Z2MClient:
     def request_devices_update(self) -> None:
         """Request zigbee2mqtt to republish the devices list"""
         self._client.publish(f"{self._base_topic}/bridge/request/devices/get", "{}")
+
+    def subscribe_device(self, friendly_name: str) -> None:
+        """Subscribe to a device's state topic"""
+        if friendly_name in self._subscribed_devices:
+            return
+        topic = f"{self._base_topic}/{friendly_name}"
+        self._client.subscribe(topic)
+        self._client.message_callback_add(topic, self._make_device_state_handler(friendly_name))
+        self._subscribed_devices.add(friendly_name)
+
+    def request_device_state(self, friendly_name: str) -> None:
+        """Request current state from a device via zigbee2mqtt/{device}/get"""
+        self._client.publish(f"{self._base_topic}/{friendly_name}/get", "{}")
+
+    def _make_device_state_handler(self, friendly_name: str):
+        def handler(_client: object, _userdata: object, message: object) -> None:
+            data = _parse_json_payload(message, friendly_name)
+            if data is not None:
+                self._on_device_state(friendly_name, data)
+        return handler
 
     def _handle_bridge_state(self, _client: object, _userdata: object, message: object) -> None:
         """Parse bridge/state: may be plain string or JSON {"state": "..."}"""
@@ -104,12 +128,15 @@ class Z2MClient:
         self._on_bridge_log(log_level, log_message or "")
 
     def _handle_bridge_devices(self, _client: object, _userdata: object, message: object) -> None:
-        """Parse bridge/devices JSON array and count non-Coordinator devices"""
+        """Parse bridge/devices JSON array into Z2MDevice list (excluding Coordinator)"""
         data = _parse_json_payload(message, "bridge/devices")
         if data is None:
             return
-        count = sum(1 for d in data if d.get("type") != "Coordinator")
-        self._on_devices(count)
+        devices = []
+        for device_data in data:
+            if device_data.get("type") != "Coordinator":
+                devices.append(Z2MDevice.from_dict(device_data))
+        self._on_devices(devices)
 
     def _handle_bridge_event(self, _client: object, _userdata: object, message: object) -> None:
         """Parse bridge/event JSON, map device_joined/device_leave to DeviceEvent"""
