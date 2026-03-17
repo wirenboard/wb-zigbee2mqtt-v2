@@ -28,7 +28,7 @@ class Z2MClient:
         """
         Args:
             mqtt_client: shared MQTT client instance
-            base_topic: zigbee2mqtt base topic (e.g. "zigbee2mqtt")
+            base_topic: zigbee2mqtt base topic, from config key "zigbee2mqtt_base_topic" (default "zigbee2mqtt")
             on_bridge_state: called with bridge state ("online", "offline", "error")
             on_bridge_info: called with BridgeInfo on bridge/info updates
             on_bridge_log: called with (level, message) on bridge/logging updates
