@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -25,6 +26,20 @@ class ControlMeta:
     readonly: bool
     order: Optional[int] = None
     title: dict = field(default_factory=dict)
+    value_on: Optional[str] = None
+    value_off: Optional[str] = None
+
+    def format_value(self, value: object) -> str:
+        """Convert a z2m value to WB control string representation"""
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return "1" if value else "0"
+        if self.type == "switch" and self.value_on is not None:
+            return "1" if str(value) == self.value_on else "0"
+        if isinstance(value, dict):
+            return json.dumps(value)
+        return str(value)
 
 
 # Control metadata for the zigbee2mqtt bridge virtual device with translations for English and Russian

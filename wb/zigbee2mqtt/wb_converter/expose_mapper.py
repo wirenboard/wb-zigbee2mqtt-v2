@@ -57,7 +57,10 @@ def _map_leaf_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
     if wb_type is None:
         return []
 
-    meta = ControlMeta(type=wb_type, readonly=True)
+    meta = ControlMeta(
+        type=wb_type, readonly=True,
+        value_on=feature.value_on, value_off=feature.value_off,
+    )
     return [(feature.property, meta)]
 
 

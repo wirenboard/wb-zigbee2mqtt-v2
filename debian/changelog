@@ -1,3 +1,15 @@
+wb-zigbee2mqtt (1.2.0) stable; urgency=medium
+
+  * Add device discovery: parse bridge/devices exposes, create WB devices
+  * Add real-time device state updates via zigbee2mqtt/{device} subscription
+  * Add expose type mapping: numeric, binary, enum, text, composite
+  * Add binary value conversion using value_on/value_off from exposes
+  * Add device removal: clean up WB retain topics on device remove/leave
+  * Skip device registration until interview completes (exposes available)
+  * Add ControlMeta.format_value() for z2m-to-WB value conversion
+
+ -- Victor Fedorov <victor.fedorov@wirenboard.com>  Mon, 17 Mar 2026 13:40:00 +0300
+
 wb-zigbee2mqtt (1.1.0) stable; urgency=medium
 
   * Add bridge device with 10 controls: state, version, log level, log,

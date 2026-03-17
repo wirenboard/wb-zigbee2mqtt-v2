@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 import time
@@ -98,10 +97,10 @@ class Bridge:
     def _register_device(self, device: Z2MDevice) -> None:
         if device.friendly_name in self._known_devices:
             return
-        controls = map_exposes_to_controls(device.exposes)
-        if not controls:
-            logger.warning("Device '%s' has no exposes, skipping", device.friendly_name)
+        if not device.exposes:
+            logger.info("Device '%s' has no exposes yet, skipping", device.friendly_name)
             return
+        controls = map_exposes_to_controls(device.exposes)
         device_id = _sanitize_device_id(device.friendly_name)
         display_name = device.friendly_name
         logger.info("Registering device '%s' as '%s' (%d controls)", display_name, device_id, len(controls))
@@ -116,10 +115,10 @@ class Bridge:
             return
         device_id = _sanitize_device_id(friendly_name)
         controls = map_exposes_to_controls(device.exposes)
-        for prop in controls:
+        for prop, meta in controls.items():
             if prop in state:
                 value = state[prop]
-                self._wb.publish_device_control(device_id, prop, _format_value(value))
+                self._wb.publish_device_control(device_id, prop, meta.format_value(value))
         if "last_seen" in state:
             last_seen = state["last_seen"]
             if isinstance(last_seen, (int, float)) and last_seen > 1e12:
@@ -134,6 +133,13 @@ class Bridge:
         control = _EVENT_TYPE_TO_CONTROL.get(event.type)
         if control:
             self._wb.publish_bridge_control(control, event.name)
+        if event.type in (DeviceEventType.REMOVED, DeviceEventType.LEFT):
+            device = self._known_devices.pop(event.name, None)
+            if device:
+                device_id = _sanitize_device_id(event.name)
+                controls = map_exposes_to_controls(device.exposes)
+                self._wb.remove_device(device_id, controls)
+                logger.info("Removed WB device '%s'", device_id)
         self._update_stats()
 
 
@@ -142,11 +148,3 @@ def _sanitize_device_id(friendly_name: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_]", "_", friendly_name)
 
 
-def _format_value(value: object) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, bool):
-        return "1" if value else "0"
-    if isinstance(value, dict):
-        return json.dumps(value)
-    return str(value)
