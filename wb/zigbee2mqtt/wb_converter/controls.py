@@ -17,6 +17,9 @@ class WbControlType:
     SOUND_LEVEL = "sound_level"
     POWER = "power"
     VOLTAGE = "voltage"
+    CURRENT = "current"
+    POWER_CONSUMPTION = "power_consumption"
+    ILLUMINANCE = "illuminance"
 
 
 class BridgeControl:

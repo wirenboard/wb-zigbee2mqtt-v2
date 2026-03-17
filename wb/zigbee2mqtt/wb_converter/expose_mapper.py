@@ -15,6 +15,9 @@ NUMERIC_TYPE_MAP: dict[str, str] = {
     ExposeProperty.NOISE: WbControlType.SOUND_LEVEL,
     ExposeProperty.POWER: WbControlType.POWER,
     ExposeProperty.VOLTAGE: WbControlType.VOLTAGE,
+    ExposeProperty.CURRENT: WbControlType.CURRENT,
+    ExposeProperty.ENERGY: WbControlType.POWER_CONSUMPTION,
+    ExposeProperty.ILLUMINANCE_LUX: WbControlType.ILLUMINANCE,
 }
 
 # Specific/composite expose types that contain nested features

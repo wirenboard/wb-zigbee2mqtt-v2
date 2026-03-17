@@ -21,6 +21,8 @@ class ExposeProperty:
     NOISE = "noise"
     POWER = "power"
     VOLTAGE = "voltage"
+    CURRENT = "current"
+    ENERGY = "energy"
     BATTERY = "battery"
     LINKQUALITY = "linkquality"
     ILLUMINANCE = "illuminance"
