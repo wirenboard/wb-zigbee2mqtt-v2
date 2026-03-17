@@ -141,13 +141,13 @@
 | `bridge.py` | Оркестратор: z2m-события → WB-контролы, регистрация/удаление устройств | ✅ |
 | `registered_device.py` | `RegisteredDevice`: кеш z2m-устройства с WB controls и device_id | ✅ |
 | `z2m/client.py` | `Z2MClient`: подписка на z2m-топики, парсинг → коллбэки | ✅ |
-| `z2m/model.py` | `BridgeInfo`, `BridgeState`, `DeviceEvent`, `BridgeLogLevel`, `Z2MDevice`, `ExposeFeature` | ✅ |
+| `z2m/model.py` | `BridgeInfo`, `BridgeState`, `DeviceEvent`, `BridgeLogLevel`, `Z2MDevice`, `ExposeFeature`, `ExposeType`, `ExposeProperty` | ✅ |
 | `mqtt_client.py` | Зарезервировано для расширения MQTT-клиента | зарезервировано |
 | `z2m/ota.py` | OTA: проверка и запуск обновлений | зарезервировано |
 | `wb_converter/publisher.py` | `WbPublisher`: публикация/удаление устройств, JSON `/meta`, команды | ✅ |
 | `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (типы, value_on/off) | ✅ |
 | `wb_converter/subscriber.py` | Подписка на `/on`-топики WB, передача команд в bridge | зарезервировано |
-| `wb_converter/controls.py` | `BridgeControl`, `ControlMeta` (с `format_value`), `BRIDGE_CONTROLS` | ✅ |
+| `wb_converter/controls.py` | `WbControlType`, `BridgeControl`, `ControlMeta` (с `format_value`), `BRIDGE_CONTROLS` | ✅ |
 
 ---
 

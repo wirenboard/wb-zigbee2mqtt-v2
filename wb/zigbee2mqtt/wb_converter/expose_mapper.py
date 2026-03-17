@@ -1,24 +1,27 @@
 import logging
 from typing import Optional
 
-from ..z2m.model import ExposeFeature
-from .controls import ControlMeta
+from ..z2m.model import ExposeFeature, ExposeProperty, ExposeType
+from .controls import ControlMeta, WbControlType
 
 logger = logging.getLogger(__name__)
 
 # Mapping of z2m property names to WB control types (for numeric exposes)
 NUMERIC_TYPE_MAP: dict[str, str] = {
-    "temperature": "temperature",
-    "humidity": "rel_humidity",
-    "pressure": "atmospheric_pressure",
-    "co2": "concentration",
-    "noise": "sound_level",
-    "power": "power",
-    "voltage": "voltage",
+    ExposeProperty.TEMPERATURE: WbControlType.TEMPERATURE,
+    ExposeProperty.HUMIDITY: WbControlType.REL_HUMIDITY,
+    ExposeProperty.PRESSURE: WbControlType.ATMOSPHERIC_PRESSURE,
+    ExposeProperty.CO2: WbControlType.CONCENTRATION,
+    ExposeProperty.NOISE: WbControlType.SOUND_LEVEL,
+    ExposeProperty.POWER: WbControlType.POWER,
+    ExposeProperty.VOLTAGE: WbControlType.VOLTAGE,
 }
 
 # Specific/composite expose types that contain nested features
-NESTED_TYPES = {"light", "switch", "lock", "climate", "fan", "cover", "composite"}
+NESTED_TYPES = {
+    ExposeType.LIGHT, ExposeType.SWITCH, ExposeType.LOCK,
+    ExposeType.CLIMATE, ExposeType.FAN, ExposeType.COVER, ExposeType.COMPOSITE,
+}
 
 
 def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMeta]:
@@ -32,7 +35,7 @@ def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMe
                 controls[prop] = meta
                 order += 1
     controls["last_seen"] = ControlMeta(
-        type="text", readonly=True, order=order,
+        type=WbControlType.TEXT, readonly=True, order=order,
         title={"en": "Last seen", "ru": "Последняя активность"},
     )
     return controls
@@ -65,11 +68,11 @@ def _map_leaf_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
 
 
 def _resolve_wb_type(feature: ExposeFeature) -> Optional[str]:
-    if feature.type == "numeric":
-        return NUMERIC_TYPE_MAP.get(feature.property, "value")
-    if feature.type == "binary":
-        return "switch"
-    if feature.type in ("enum", "text"):
-        return "text"
+    if feature.type == ExposeType.NUMERIC:
+        return NUMERIC_TYPE_MAP.get(feature.property, WbControlType.VALUE)
+    if feature.type == ExposeType.BINARY:
+        return WbControlType.SWITCH
+    if feature.type in (ExposeType.ENUM, ExposeType.TEXT):
+        return WbControlType.TEXT
     logger.warning("Unknown expose type '%s' for property '%s'", feature.type, feature.property)
     return None

@@ -11,6 +11,42 @@ class BridgeInfo:
     permit_join_end: Optional[int]
 
 
+class ExposeProperty:
+    """Common zigbee2mqtt expose property names"""
+
+    TEMPERATURE = "temperature"
+    HUMIDITY = "humidity"
+    PRESSURE = "pressure"
+    CO2 = "co2"
+    NOISE = "noise"
+    POWER = "power"
+    VOLTAGE = "voltage"
+    BATTERY = "battery"
+    LINKQUALITY = "linkquality"
+    ILLUMINANCE = "illuminance"
+    ILLUMINANCE_LUX = "illuminance_lux"
+    OCCUPANCY = "occupancy"
+    STATE = "state"
+    BRIGHTNESS = "brightness"
+    COLOR_TEMP = "color_temp"
+
+
+class ExposeType:
+    """Zigbee2mqtt expose type identifiers"""
+
+    NUMERIC = "numeric"
+    BINARY = "binary"
+    ENUM = "enum"
+    TEXT = "text"
+    LIGHT = "light"
+    SWITCH = "switch"
+    LOCK = "lock"
+    CLIMATE = "climate"
+    FAN = "fan"
+    COVER = "cover"
+    COMPOSITE = "composite"
+
+
 class ExposeAccess:
     """Bitmask constants for zigbee2mqtt expose access flags"""
 
