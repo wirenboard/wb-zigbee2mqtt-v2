@@ -128,7 +128,9 @@ class Z2MDevice:
 
 
 def _str_or_none(value: object) -> Optional[str]:
-    return str(value) if value is not None else None
+    if value is None:
+        return None
+    return str(value)
 
 
 class BridgeState:
