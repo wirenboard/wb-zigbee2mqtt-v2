@@ -22,8 +22,13 @@ NUMERIC_TYPE_MAP: dict[str, str] = {
 
 # Specific/composite expose types that contain nested features
 NESTED_TYPES = {
-    ExposeType.LIGHT, ExposeType.SWITCH, ExposeType.LOCK,
-    ExposeType.CLIMATE, ExposeType.FAN, ExposeType.COVER, ExposeType.COMPOSITE,
+    ExposeType.LIGHT,      # dimmable lights, color lights
+    ExposeType.SWITCH,     # on/off switches, smart plugs
+    ExposeType.LOCK,       # door locks
+    ExposeType.CLIMATE,    # thermostats, AC controllers
+    ExposeType.FAN,        # fans, ventilation
+    ExposeType.COVER,      # blinds, curtains, shutters
+    ExposeType.COMPOSITE,  # generic multi-property exposes
 }
 
 
@@ -45,7 +50,28 @@ def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMe
 
 
 def _flatten_expose(expose: ExposeFeature) -> list[tuple[str, ControlMeta]]:
-    """Recursively flatten an expose feature into (property, ControlMeta) pairs"""
+    """Recursively flatten an expose feature into (property, ControlMeta) pairs.
+
+    Leaf features are mapped directly. Composite types (light, switch, climate, etc.)
+    are unwrapped and their nested features are flattened recursively.
+
+    Example::
+
+        # Leaf expose — returned as-is via _map_leaf_feature
+        expose = ExposeFeature(type="numeric", name="temperature", property="temperature")
+        _flatten_expose(expose)
+        # [("temperature", ControlMeta(type="temperature", ...))]
+
+        # Composite expose — nested features are extracted and flattened
+        expose = ExposeFeature(type="light", name="light", property="", features=[
+            ExposeFeature(type="binary", name="state", property="state",
+                          value_on="ON", value_off="OFF"),
+            ExposeFeature(type="numeric", name="brightness", property="brightness"),
+        ])
+        _flatten_expose(expose)
+        # [("state", ControlMeta(type="switch", ...)),
+        #  ("brightness", ControlMeta(type="value", ...))]
+    """
     if expose.type in NESTED_TYPES and expose.features:
         result = []
         for sub in expose.features:
@@ -55,7 +81,20 @@ def _flatten_expose(expose: ExposeFeature) -> list[tuple[str, ControlMeta]]:
 
 
 def _map_leaf_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
-    """Map a single leaf expose feature to a (property, ControlMeta) pair"""
+    """Map a single leaf ExposeFeature to a (property, ControlMeta) pair.
+
+    Example::
+
+        feature = ExposeFeature(type="numeric", name="temperature", property="temperature")
+        result = _map_leaf_feature(feature)
+        # [("temperature", ControlMeta(type="temperature", readonly=True, title={"en": "Temperature"}))]
+
+        feature = ExposeFeature(type="binary", name="occupancy", property="occupancy",
+                                value_on="true", value_off="false")
+        result = _map_leaf_feature(feature)
+        # [("occupancy", ControlMeta(type="switch", readonly=True, title={"en": "Occupancy"},
+        #                            value_on="true", value_off="false"))]
+    """
     if not feature.property:
         return []
 
