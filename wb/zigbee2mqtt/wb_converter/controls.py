@@ -21,6 +21,7 @@ class WbControlType:
     CURRENT = "current"
     POWER_CONSUMPTION = "power_consumption"
     ILLUMINANCE = "illuminance"
+    RANGE = "range"
     RGB = "rgb"
 
 
@@ -51,6 +52,9 @@ class ControlMeta:
     title: dict = field(default_factory=dict)
     value_on: Optional[str] = None
     value_off: Optional[str] = None
+    enum: Optional[dict] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
 
     def format_value(self, value: object) -> str:
         """Convert a z2m value to WB control string representation"""
@@ -65,6 +69,42 @@ class ControlMeta:
         if isinstance(value, dict):
             return json.dumps(value)
         return str(value)
+
+    def parse_wb_value(self, wb_value: str) -> object:
+        """Convert a WB control value to z2m format (reverse of format_value)"""
+        if self.type == WbControlType.SWITCH:
+            if self.value_on is not None:
+                return self.value_on if wb_value == "1" else self.value_off
+            return wb_value == "1"
+        if self.type == WbControlType.RGB:
+            return _wb_rgb_to_hs_dict(wb_value)
+        if self.type == WbControlType.TEXT:
+            return wb_value
+        return _parse_number(wb_value)
+
+
+def _wb_rgb_to_hs_dict(wb_rgb: str) -> dict:
+    """Convert WB RGB format "R;G;B" to z2m color dict {"hue": H, "saturation": S}.
+
+    Example:
+        >>> _wb_rgb_to_hs_dict("255;0;0")
+        {"hue": 0, "saturation": 100}
+        >>> _wb_rgb_to_hs_dict("0;0;255")
+        {"hue": 240, "saturation": 100}
+    """
+    parts = wb_rgb.split(";")
+    r, g, b = int(parts[0]) / 255, int(parts[1]) / 255, int(parts[2]) / 255
+    h, s, _v = colorsys.rgb_to_hsv(r, g, b)
+    return {"hue": round(h * 360), "saturation": round(s * 100)}
+
+
+def _parse_number(value: str) -> object:
+    """Parse string as int or float, return original string on failure"""
+    try:
+        f = float(value)
+        return int(f) if f.is_integer() else f
+    except ValueError:
+        return value
 
 
 def _hs_dict_to_wb_rgb(color: dict) -> str:

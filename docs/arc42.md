@@ -146,9 +146,9 @@
 | `mqtt_client.py` | Зарезервировано для расширения MQTT-клиента | зарезервировано |
 | `z2m/ota.py` | OTA: проверка и запуск обновлений | зарезервировано |
 | `wb_converter/publisher.py` | `WbPublisher`: публикация/удаление устройств, JSON `/meta`, команды | ✅ |
-| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (10 numeric типов, binary, enum, text) | ✅ |
+| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (10 numeric типов, binary, enum, text, range для writable с min/max) | ✅ |
 | `wb_converter/subscriber.py` | Подписка на `/on`-топики WB, передача команд в bridge | зарезервировано |
-| `wb_converter/controls.py` | `WbControlType`, `BridgeControl`, `ControlMeta` (с `format_value`), `BRIDGE_CONTROLS` | ✅ |
+| `wb_converter/controls.py` | `WbControlType` (16 констант, вкл. RANGE, RGB), `BridgeControl`, `ControlMeta` (с `format_value`), `BRIDGE_CONTROLS` | ✅ |
 
 ---
 

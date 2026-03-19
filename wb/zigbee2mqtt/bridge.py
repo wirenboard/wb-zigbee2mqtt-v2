@@ -3,7 +3,7 @@ import re
 import time
 from datetime import datetime
 from datetime import timezone
-from typing import Optional
+from typing import Callable, Optional
 
 from wb_common.mqtt_client import MQTTClient
 
@@ -127,6 +127,9 @@ class Bridge:
         logger.info("Registering device '%s' as '%s' (%d controls)", device.friendly_name, device_id, len(controls))
         self._known_devices[device.friendly_name] = registered
         self._wb.publish_device(device_id, device.friendly_name, controls)
+        self._wb.subscribe_device_commands(
+            device_id, controls, self._make_device_command_handler(registered),
+        )
         self._z2m.subscribe_device(device.friendly_name)
         self._z2m.request_device_state(device.friendly_name)
 
@@ -144,6 +147,25 @@ class Bridge:
                 self._wb.publish_device_control(registered.device_id, "last_seen", formatted)
         self._update_stats()
 
+    def _make_device_command_handler(self, registered: RegisteredDevice) -> Callable[[str, str], None]:
+        """Create a callback for WB /on commands that forwards them to z2m.
+
+        The closure captures `registered` (same object as in _known_devices),
+        so friendly_name stays current after renames.
+        """
+        def on_command(control_id: str, wb_value: str) -> None:
+            meta = registered.controls.get(control_id)
+            if meta is None:
+                return
+            z2m_value = meta.parse_wb_value(wb_value)
+            payload = {control_id: z2m_value}
+            logger.info(
+                "Device command: %s/%s = %s → %s",
+                registered.z2m.friendly_name, control_id, wb_value, z2m_value,
+            )
+            self._z2m.set_device_state(registered.z2m.friendly_name, payload)
+        return on_command
+
     def _on_device_event(self, event: DeviceEvent) -> None:
         logger.info("Device event: %s %s", event.type, event.name)
         control = _EVENT_TYPE_TO_CONTROL.get(event.type)
@@ -153,6 +175,7 @@ class Bridge:
             registered = self._known_devices.pop(event.name, None)
             if registered:
                 self._z2m.unsubscribe_device(event.name)
+                self._wb.unsubscribe_device_commands(registered.device_id, registered.controls)
                 self._wb.remove_device(registered.device_id, registered.controls)
                 logger.info("Removed WB device '%s'", registered.device_id)
         elif event.type == DeviceEventType.RENAMED:

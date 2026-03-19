@@ -101,6 +101,10 @@ class Z2MClient:
         """Request current state from a device via zigbee2mqtt/{device}/get"""
         self._client.publish(f"{self._base_topic}/{friendly_name}/get", "{}")
 
+    def set_device_state(self, friendly_name: str, payload: dict) -> None:
+        """Send command to a device via zigbee2mqtt/{device}/set"""
+        self._client.publish(f"{self._base_topic}/{friendly_name}/set", json.dumps(payload))
+
     def _make_device_state_handler(self, friendly_name: str):
         def handler(_client: object, _userdata: object, message: object) -> None:
             data = _parse_json_payload(message, friendly_name)

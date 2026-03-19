@@ -61,6 +61,36 @@ class WbPublisher:
         self._client.message_callback_add(permit_join_topic, handle_permit_join)
         self._client.message_callback_add(update_devices_topic, handle_update_devices)
 
+    def subscribe_device_commands(
+        self,
+        device_id: str,
+        controls: dict[str, ControlMeta],
+        on_command: Callable[[str, str], None],
+    ) -> None:
+        """Subscribe to /on topics for writable controls.
+
+        Args:
+            device_id: WB device ID
+            controls: device controls dict (property → ControlMeta)
+            on_command: callback(control_id, wb_value) called when a command is received
+        """
+        for control_id, meta in controls.items():
+            if meta.readonly:
+                continue
+            topic = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}/on"
+            self._client.subscribe(topic)
+            self._client.message_callback_add(topic, _make_command_handler(control_id, on_command))
+            logger.debug("Subscribed to device command: %s", topic)
+
+    def unsubscribe_device_commands(self, device_id: str, controls: dict[str, ControlMeta]) -> None:
+        """Unsubscribe from /on topics for writable controls"""
+        for control_id, meta in controls.items():
+            if meta.readonly:
+                continue
+            topic = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}/on"
+            self._client.unsubscribe(topic)
+            self._client.message_callback_remove(topic)
+
     def _publish_device(self, device_id: str, name: str, controls: dict[str, ControlMeta]) -> None:
         device_meta = {"title": {"en": name, "ru": name}}
         self._publish_retain(f"{DEVICES_PREFIX}/{device_id}/meta", json.dumps(device_meta))
@@ -74,8 +104,22 @@ class WbPublisher:
             payload["order"] = meta.order
         if meta.title:
             payload["title"] = meta.title
+        if meta.enum:
+            payload["enum"] = meta.enum
+        if meta.max is not None:
+            payload["max"] = meta.max
+        if meta.min is not None:
+            payload["min"] = meta.min
         topic = f"{DEVICES_PREFIX}/{device_id}/controls/{control_id}/meta"
         self._publish_retain(topic, json.dumps(payload))
 
     def _publish_retain(self, topic: str, value: str) -> None:
         self._client.publish(topic, value, retain=True, qos=1)
+
+
+def _make_command_handler(control_id: str, on_command: Callable[[str, str], None]):
+    """Create MQTT message handler that extracts payload and calls on_command(control_id, value)"""
+    def handler(_client: object, _userdata: object, message: object) -> None:
+        value = message.payload.decode("utf-8").strip()
+        on_command(control_id, value)
+    return handler

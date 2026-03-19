@@ -123,10 +123,17 @@ def _map_leaf_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
         return []
 
     title = _make_title(feature.property)
+    enum = _make_enum(feature) if feature.type == ExposeType.ENUM else None
+    # Writable numerics with min/max → range (slider), not value (text input)
+    if wb_type == WbControlType.VALUE and feature.is_writable and feature.value_min is not None and feature.value_max is not None:
+        wb_type = WbControlType.RANGE
+
     meta = ControlMeta(
-        type=wb_type, readonly=True,
+        type=wb_type, readonly=not feature.is_writable,
         title={"en": title},
         value_on=feature.value_on, value_off=feature.value_off,
+        enum=enum,
+        min=feature.value_min, max=feature.value_max,
     )
     return [(feature.property, meta)]
 
@@ -147,11 +154,19 @@ def _map_color_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
         _map_color_feature(feature)
         # [("color", ControlMeta(type="rgb", readonly=True, title={"en": "Color"}))]
     """
+    writable = any(sub.is_writable for sub in feature.features) if feature.features else False
     meta = ControlMeta(
-        type=WbControlType.RGB, readonly=True,
+        type=WbControlType.RGB, readonly=not writable,
         title={"en": "Color", "ru": "Цвет"},
     )
     return [(feature.property, meta)]
+
+
+def _make_enum(feature: ExposeFeature) -> Optional[dict]:
+    """Build WB enum dict from z2m enum values: {"off": 0, "on": 1, ...}"""
+    if not feature.values:
+        return None
+    return {val: idx for idx, val in enumerate(feature.values)}
 
 
 def _make_title(property_name: str) -> str:
