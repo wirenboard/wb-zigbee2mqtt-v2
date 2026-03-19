@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from .z2m.model import BridgeLogLevel
 
-CONFIG_FILEPATH = "/usr/lib/wb-zigbee2mqtt/configs/wb-zigbee2mqtt.conf"
+CONFIG_FILEPATH = "/usr/lib/wb-mqtt-zigbee/configs/wb-mqtt-zigbee.conf"
 
 logger = logging.getLogger(__name__)
 

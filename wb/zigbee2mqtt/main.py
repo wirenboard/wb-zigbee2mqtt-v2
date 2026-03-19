@@ -34,6 +34,6 @@ def main(argv: list) -> int:
         logger.error("%s", e)
         return EXIT_CONFIG_ERROR
 
-    logger.info("Starting wb-zigbee2mqtt-v2, broker: %s", config.broker_url)
+    logger.info("Starting wb-mqtt-zigbee, broker: %s", config.broker_url)
     service = WbZigbee2Mqtt(config)
     return service.run()

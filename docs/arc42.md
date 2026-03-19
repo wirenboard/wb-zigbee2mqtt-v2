@@ -1,4 +1,4 @@
-# Архитектура wb-zigbee2mqtt-v2 (arc42)
+# Архитектура wb-mqtt-zigbee (arc42)
 
 ---
 
@@ -6,7 +6,7 @@
 
 ### Назначение системы
 
-`wb-zigbee2mqtt-v2` — сервис-мост между [zigbee2mqtt](https://www.zigbee2mqtt.io/) и [Wiren Board MQTT Conventions](https://github.com/wirenboard/conventions). Создаёт виртуальные устройства WB на основе данных от zigbee2mqtt, транслирует состояния Zigbee-устройств в контролы WB, а команды пользователя из WB — обратно в zigbee2mqtt.
+`wb-mqtt-zigbee` — сервис-мост между [zigbee2mqtt](https://www.zigbee2mqtt.io/) и [Wiren Board MQTT Conventions](https://github.com/wirenboard/conventions). Создаёт виртуальные устройства WB на основе данных от zigbee2mqtt, транслирует состояния Zigbee-устройств в контролы WB, а команды пользователя из WB — обратно в zigbee2mqtt.
 
 ### Цели
 
@@ -40,7 +40,7 @@
 
 ### Организационные
 
-- Конфигурация через JSON-файл `/usr/lib/wb-zigbee2mqtt/configs/wb-zigbee2mqtt.conf`
+- Конфигурация через JSON-файл `/usr/lib/wb-mqtt-zigbee/configs/wb-mqtt-zigbee.conf`
 - Сборка через Jenkins (`buildDebArchAll`)
 
 ---
@@ -69,7 +69,7 @@
          ┌──────────────┼──────────────────┐
          │              │                  │
 ┌────────▼────────┐  ┌──▼─────────────┐  ┌▼─────────────┐
-│ wb-zigbee2mqtt  │  │ wb-mqtt-serial │  │ Wiren Board  │
+│ wb-mqtt-zigbee  │  │ wb-mqtt-serial │  │ Wiren Board  │
 │   -v2 (это)     │  │ (другие        │  │   Web UI     │
 │  R: zigbee2mqtt/│  │  устройства WB)│  │  (только     │
 │  W: /devices/   │  └────────────────┘  │   чтение)    │
@@ -119,7 +119,7 @@
 
 ```
 ┌──────────────────────────────────────────────┐
-│              wb-zigbee2mqtt-v2               │
+│              wb-mqtt-zigbee                  │
 │                                              │
 │  main.py → app.py (WbZigbee2Mqtt)            │
 │                    │                         │
@@ -157,7 +157,7 @@
 
 ```
 main.py
-  → загружает wb-zigbee2mqtt.conf (JSON)
+  → загружает wb-mqtt-zigbee.conf (JSON)
   → создаёт WbZigbee2Mqtt (app.py)
     → создаёт MQTTClient, Bridge
     → подключается к брокеру
@@ -248,8 +248,8 @@ zigbee2mqtt/bridge/devices → устройство с новым friendly_name
 ```
 Wiren Board (ARM Linux)
 ├── /usr/lib/python3/dist-packages/wb/zigbee2mqtt/        — Python-пакет
-├── /usr/lib/wb-zigbee2mqtt/configs/wb-zigbee2mqtt.conf   — конфигурация (JSON)
-└── /lib/systemd/system/wb-zigbee2mqtt.service            — systemd unit
+├── /usr/lib/wb-mqtt-zigbee/configs/wb-mqtt-zigbee.conf   — конфигурация (JSON)
+└── /lib/systemd/system/wb-mqtt-zigbee.service            — systemd unit
 
 Зависимости на целевой системе:
 - python3.9
@@ -279,7 +279,7 @@ WB MQTT Conventions позволяют добавлять и удалять ко
 
 ### Логирование
 
-Используется стандартный `logging` Python. В systemd-окружении вывод идёт в journald (`journalctl -u wb-zigbee2mqtt`).
+Используется стандартный `logging` Python. В systemd-окружении вывод идёт в journald (`journalctl -u wb-mqtt-zigbee`).
 
 ---
 

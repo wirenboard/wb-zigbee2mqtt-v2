@@ -1,4 +1,4 @@
-# wb-zigbee2mqtt-v2
+# wb-mqtt-zigbee
 
 Сервис-мост между [zigbee2mqtt](https://www.zigbee2mqtt.io/) и [Wiren Board MQTT Conventions](https://github.com/wirenboard/conventions).
 
@@ -17,7 +17,7 @@ zigbee2mqtt/living_room_sensor → {"temperature": 23.5, "humidity": 45}
 
 Wiren Board работает с другим форматом — [WB MQTT Conventions](https://github.com/wirenboard/conventions), где каждое устройство представлено набором топиков вида `/devices/{id}/controls/{name}`.
 
-**wb-zigbee2mqtt-v2** связывает эти два мира:
+**wb-mqtt-zigbee** связывает эти два мира:
 
 1. **Подписывается** на топики `zigbee2mqtt/` и получает состояние моста, список устройств, логи и события
 2. **Создает виртуальные WB-устройства** в `/devices/` — публикует метаданные (`/meta`) и значения контролов по WB MQTT Conventions
@@ -27,7 +27,7 @@ Wiren Board работает с другим форматом — [WB MQTT Conve
 Zigbee-устройства
        │ Zigbee
        ▼
-  zigbee2mqtt ──── MQTT ────► wb-zigbee2mqtt-v2 ──── MQTT ────► Wiren Board UI
+   zigbee2mqtt ──── MQTT ────► wb-mqtt-zigbee ──── MQTT ────► Wiren Board UI
               zigbee2mqtt/*                     /devices/*
               ◄──── MQTT ────                   ◄──── MQTT ────
               запросы (set/get)                 команды (/on)
