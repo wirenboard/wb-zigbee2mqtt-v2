@@ -84,7 +84,7 @@ def _hs_dict_to_wb_rgb(color: dict) -> str:
     hue = float(color.get("hue", 0))
     saturation = float(color.get("saturation", 0))
     r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, 1.0)
-    return f"{int(r * 255)};{int(g * 255)};{int(b * 255)}"
+    return f"{round(r * 255)};{round(g * 255)};{round(b * 255)}"
 
 
 # Control metadata for the zigbee2mqtt bridge virtual device with translations for English and Russian

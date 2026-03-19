@@ -2,6 +2,7 @@ import logging
 import re
 import time
 from datetime import datetime
+from datetime import timezone
 from typing import Optional
 
 from wb_common.mqtt_client import MQTTClient
@@ -99,7 +100,7 @@ class Bridge:
         if BridgeLogLevel.RANK.get(level, 0) >= self._log_min_rank:
             self._wb.publish_bridge_control(BridgeControl.LOG, message)
 
-    def _on_devices(self, devices: list) -> None:
+    def _on_devices(self, devices: list[Z2MDevice]) -> None:
         logger.info("Devices: %d", len(devices))
         self._wb.publish_bridge_control(BridgeControl.DEVICE_COUNT, str(len(devices)))
         self._update_stats()
@@ -192,7 +193,8 @@ def _format_last_seen(value: object) -> str:
         if isinstance(value, (int, float)):
             if value > 1e12:
                 value = value / 1000
-            return datetime.fromtimestamp(value).strftime("%Y-%m-%d %H:%M:%S")
+            dt = datetime.fromtimestamp(value, tz=timezone.utc)
+            return dt.astimezone().strftime("%Y-%m-%d %H:%M:%S")
     except (ValueError, OSError, OverflowError):
         logger.warning("Failed to parse last_seen: %s", value)
     return ""

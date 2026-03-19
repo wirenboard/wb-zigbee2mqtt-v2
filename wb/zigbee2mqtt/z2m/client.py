@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 from wb_common.mqtt_client import MQTTClient
 
@@ -189,7 +189,7 @@ class Z2MClient:
             self._on_device_event(DeviceEvent(type=DeviceEventType.REMOVED, name=name))
 
 
-def _parse_json_payload(message: object, topic_name: str) -> Optional[dict]:
+def _parse_json_payload(message: object, topic_name: str) -> Optional[Union[dict, list]]:
     """Decode MQTT message payload as JSON. Returns None and logs warning on failure"""
     try:
         return json.loads(message.payload.decode("utf-8"))
