@@ -58,27 +58,24 @@ class Bridge:
         self._ieee_to_name: dict[str, str] = {}  # ieee_address → friendly_name
 
     def subscribe(self) -> None:
-        self._wb.publish_bridge_device()
-        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, self._bridge_log_min_level)
-        self._z2m.subscribe()
-        self._wb.subscribe_bridge_commands(
-            on_permit_join=self._z2m.set_permit_join,
-            on_update_devices=self._z2m.request_devices_update,
-        )
+        self._publish_bridge()
 
     def republish(self) -> None:
-        self._wb.publish_bridge_device()
-        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, self._bridge_log_min_level)
-        self._z2m.subscribe()
-        self._wb.subscribe_bridge_commands(
-            on_permit_join=self._z2m.set_permit_join,
-            on_update_devices=self._z2m.request_devices_update,
-        )
+        self._publish_bridge()
         for friendly_name, registered in self._known_devices.items():
             self._wb.publish_device(registered.device_id, friendly_name, registered.controls)
             self._z2m.subscribe_device(friendly_name)
             self._z2m.request_device_state(friendly_name)
         self._z2m.request_devices_update()
+
+    def _publish_bridge(self) -> None:
+        self._wb.publish_bridge_device()
+        self._wb.publish_bridge_control(BridgeControl.LOG_LEVEL, self._bridge_log_min_level)
+        self._z2m.subscribe()
+        self._wb.subscribe_bridge_commands(
+            on_permit_join=self._z2m.set_permit_join,
+            on_update_devices=self._z2m.request_devices_update,
+        )
 
     def _update_stats(self) -> None:
         self._messages_received += 1
@@ -216,7 +213,17 @@ def _sanitize_device_id(ieee_address: str) -> str:
 
 
 def _format_last_seen(value: object) -> str:
-    """Convert last_seen to formatted local datetime string. Handles epoch (ms and s) and ISO strings"""
+    """Convert last_seen to formatted local datetime string.
+
+    zigbee2mqtt sends last_seen in one of three formats depending on configuration:
+    - epoch milliseconds (default): 1700000000000
+    - epoch seconds: 1700000000
+    - ISO 8601 string: "2023-11-14T22:13:20.000Z"
+
+    The > 1e12 threshold reliably distinguishes ms from s: 1e12 ms = 2001-09-09,
+    while 1e12 s = year 33658. All real-world ms timestamps are above this threshold,
+    and all real-world s timestamps are below it.
+    """
     try:
         if isinstance(value, str):
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))

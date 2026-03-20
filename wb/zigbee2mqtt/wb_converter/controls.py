@@ -1,7 +1,10 @@
 import colorsys
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class WbControlType:
@@ -92,10 +95,16 @@ def _wb_rgb_to_hs_dict(wb_rgb: str) -> dict:
         >>> _wb_rgb_to_hs_dict("0;0;255")
         {"hue": 240, "saturation": 100}
     """
-    parts = wb_rgb.split(";")
-    r, g, b = int(parts[0]) / 255, int(parts[1]) / 255, int(parts[2]) / 255
-    h, s, _v = colorsys.rgb_to_hsv(r, g, b)
-    return {"hue": round(h * 360), "saturation": round(s * 100)}
+    try:
+        parts = wb_rgb.split(";")
+        if len(parts) != 3:
+            raise ValueError(f"expected 3 components, got {len(parts)}")
+        r, g, b = int(parts[0]) / 255, int(parts[1]) / 255, int(parts[2]) / 255
+        h, s, _v = colorsys.rgb_to_hsv(r, g, b)
+        return {"hue": round(h * 360), "saturation": round(s * 100)}
+    except (ValueError, IndexError):
+        logger.warning("Invalid RGB value: '%s'", wb_rgb)
+        return {"hue": 0, "saturation": 0}
 
 
 def _parse_number(value: str) -> object:
@@ -121,10 +130,17 @@ def _hs_dict_to_wb_rgb(color: dict) -> str:
         >>> _hs_dict_to_wb_rgb({"hue": 240, "saturation": 100})
         "0;0;255"
     """
-    hue = float(color.get("hue", 0))
-    saturation = float(color.get("saturation", 0))
-    r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, 1.0)
-    return f"{round(r * 255)};{round(g * 255)};{round(b * 255)}"
+    if "hue" not in color or "saturation" not in color:
+        logger.warning("Color dict missing hue/saturation: %s", color)
+        return "255;255;255"
+    try:
+        hue = float(color["hue"])
+        saturation = float(color["saturation"])
+        r, g, b = colorsys.hsv_to_rgb(hue / 360, saturation / 100, 1.0)
+        return f"{round(r * 255)};{round(g * 255)};{round(b * 255)}"
+    except (ValueError, TypeError):
+        logger.warning("Invalid color values: %s", color)
+        return "255;255;255"
 
 
 # Control metadata for the zigbee2mqtt bridge virtual device with translations for English and Russian

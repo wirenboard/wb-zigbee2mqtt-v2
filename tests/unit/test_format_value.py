@@ -184,6 +184,19 @@ class TestEdgeCases:
         meta = ControlMeta(type=WbControlType.VALUE, readonly=True)
         assert meta.parse_wb_value("") == ""
 
+    def test_parse_invalid_rgb_returns_zero(self):
+        """Invalid RGB string → fallback to hue=0, saturation=0."""
+        meta = ControlMeta(type=WbControlType.RGB, readonly=False)
+        assert meta.parse_wb_value("invalid") == {"hue": 0, "saturation": 0}
+        assert meta.parse_wb_value("255;0") == {"hue": 0, "saturation": 0}
+        assert meta.parse_wb_value("") == {"hue": 0, "saturation": 0}
+
+    def test_format_color_missing_hue_saturation(self):
+        """Color dict without hue/saturation → white fallback."""
+        meta = ControlMeta(type=WbControlType.RGB, readonly=False)
+        assert meta.format_value({"x": 0.3, "y": 0.4}) == "255;255;255"
+        assert meta.format_value({}) == "255;255;255"
+
 
 # ---------------------------------------------------------------------------
 # 1.6 Round-trip
