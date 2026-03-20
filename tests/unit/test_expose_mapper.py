@@ -108,6 +108,7 @@ class TestLeafFeatures:
             "voltage": WbControlType.VOLTAGE,
             "current": WbControlType.CURRENT,
             "energy": WbControlType.POWER_CONSUMPTION,
+            "illuminance": WbControlType.ILLUMINANCE,
             "illuminance_lux": WbControlType.ILLUMINANCE,
         }
         for prop, expected_type in mapping.items():

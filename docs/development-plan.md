@@ -113,7 +113,7 @@
 **Что сделали:**
 
 - Парсинг `bridge/devices`: `Z2MDevice.from_dict()` с `ExposeFeature` (рекурсивный парсинг вложенных features)
-- Маппинг `exposes` → WB-контролы: `expose_mapper.py` с 10 numeric-маппингами, binary, enum, text, rgb (color picker), range (слайдер для writable numerics с min/max)
+- Маппинг `exposes` → WB-контролы: `expose_mapper.py` с 11 numeric-маппингами, binary, enum, text, rgb (color picker), range (слайдер для writable numerics с min/max)
 - Динамическое создание WB-устройств с JSON `/meta` и en/ru переводами
 - Запрос актуального состояния через `{device}/get` при регистрации
 - Подписка на `zigbee2mqtt/{friendly_name}` для обновления состояния в реальном времени
@@ -302,7 +302,7 @@ wb-mqtt-zigbee/
 | `mqtt_client.py` | Зарезервировано для расширения MQTT-клиента | зарезервировано |
 | `z2m/ota.py` | OTA: запрос проверки и запуск обновления | зарезервировано |
 | `wb_converter/controls.py` | `WbControlType` (16 типов, вкл. RANGE, RGB), `BridgeControl`, `ControlMeta` (с `format_value`, `parse_wb_value` и HS↔RGB), `BRIDGE_CONTROLS` (12 контролов с en/ru) | ✅ |
-| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (10 numeric типов, binary, enum, text, rgb для color) | ✅ |
+| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (11 numeric типов, binary, enum, text, rgb для color) | ✅ |
 | `wb_converter/publisher.py` | `WbPublisher`: публикация/удаление WB-устройств, JSON `/meta`, подписка на команды | ✅ |
 | ~~`wb_converter/subscriber.py`~~ | Удалён — подписка на команды реализована в `publisher.py` | — |
 

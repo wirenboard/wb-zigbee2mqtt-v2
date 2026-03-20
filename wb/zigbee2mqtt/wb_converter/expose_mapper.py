@@ -17,6 +17,7 @@ NUMERIC_TYPE_MAP: dict[str, str] = {
     ExposeProperty.VOLTAGE: WbControlType.VOLTAGE,
     ExposeProperty.CURRENT: WbControlType.CURRENT,
     ExposeProperty.ENERGY: WbControlType.POWER_CONSUMPTION,
+    ExposeProperty.ILLUMINANCE: WbControlType.ILLUMINANCE,
     ExposeProperty.ILLUMINANCE_LUX: WbControlType.ILLUMINANCE,
 }
 
