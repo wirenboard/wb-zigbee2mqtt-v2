@@ -25,6 +25,7 @@ class ExposeProperty:
     ENERGY = "energy"
     BATTERY = "battery"
     LINKQUALITY = "linkquality"
+    LOCAL_TEMPERATURE = "local_temperature"
     ILLUMINANCE = "illuminance"
     ILLUMINANCE_LUX = "illuminance_lux"
     OCCUPANCY = "occupancy"

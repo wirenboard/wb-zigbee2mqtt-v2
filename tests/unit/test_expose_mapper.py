@@ -97,9 +97,10 @@ class TestLeafFeatures:
         assert "test" not in controls
 
     def test_all_numeric_types(self):
-        """Verify all 10 NUMERIC_TYPE_MAP entries."""
+        """Verify all NUMERIC_TYPE_MAP entries."""
         mapping = {
             "temperature": WbControlType.TEMPERATURE,
+            "local_temperature": WbControlType.TEMPERATURE,
             "humidity": WbControlType.REL_HUMIDITY,
             "pressure": WbControlType.ATMOSPHERIC_PRESSURE,
             "co2": WbControlType.CONCENTRATION,
@@ -147,6 +148,60 @@ class TestCompositeFeatures:
         assert controls["color_temp"].type == WbControlType.RANGE
         assert controls["color_temp"].min == 150
         assert controls["color_temp"].max == 500
+
+    def test_climate_setpoint_is_range(self, climate_exposes):
+        controls = map_exposes_to_controls(climate_exposes)
+        assert controls["occupied_heating_setpoint"].type == WbControlType.RANGE
+        assert controls["occupied_heating_setpoint"].readonly is False
+        assert controls["occupied_heating_setpoint"].min == 7
+        assert controls["occupied_heating_setpoint"].max == 30
+
+    def test_climate_local_temperature_readonly(self, climate_exposes):
+        controls = map_exposes_to_controls(climate_exposes)
+        assert controls["local_temperature"].type == WbControlType.TEMPERATURE
+        assert controls["local_temperature"].readonly is True
+
+    def test_climate_system_mode_writable_enum(self, climate_exposes):
+        controls = map_exposes_to_controls(climate_exposes)
+        assert controls["system_mode"].type == WbControlType.TEXT
+        assert controls["system_mode"].readonly is False
+        assert controls["system_mode"].enum == {"off": 0, "heat": 1, "cool": 2, "auto": 3}
+
+    def test_climate_running_state_readonly_enum(self, climate_exposes):
+        controls = map_exposes_to_controls(climate_exposes)
+        assert controls["running_state"].type == WbControlType.TEXT
+        assert controls["running_state"].readonly is True
+        assert controls["running_state"].enum == {"idle": 0, "heat": 1, "cool": 2}
+
+    def test_cover_position_is_range(self, cover_exposes):
+        controls = map_exposes_to_controls(cover_exposes)
+        assert controls["position"].type == WbControlType.RANGE
+        assert controls["position"].readonly is False
+        assert controls["position"].min == 0
+        assert controls["position"].max == 100
+
+    def test_cover_tilt_is_range(self, cover_exposes):
+        controls = map_exposes_to_controls(cover_exposes)
+        assert controls["tilt"].type == WbControlType.RANGE
+        assert controls["tilt"].readonly is False
+
+    def test_cover_state_is_writable_enum(self, cover_exposes):
+        controls = map_exposes_to_controls(cover_exposes)
+        assert controls["state"].type == WbControlType.TEXT
+        assert controls["state"].readonly is False
+        assert controls["state"].enum == {"OPEN": 0, "CLOSE": 1, "STOP": 2}
+
+    def test_fan_state_is_switch(self, fan_exposes):
+        controls = map_exposes_to_controls(fan_exposes)
+        assert controls["state"].type == WbControlType.SWITCH
+        assert controls["state"].readonly is False
+        assert controls["state"].value_on == "ON"
+
+    def test_fan_mode_is_writable_enum(self, fan_exposes):
+        controls = map_exposes_to_controls(fan_exposes)
+        assert controls["mode"].type == WbControlType.TEXT
+        assert controls["mode"].readonly is False
+        assert controls["mode"].enum == {"low": 0, "medium": 1, "high": 2, "auto": 3}
 
 
 # ---------------------------------------------------------------------------
@@ -219,4 +274,23 @@ class TestFullDevices:
     def test_color_lamp_full(self, color_lamp_exposes):
         controls = map_exposes_to_controls(color_lamp_exposes, device_type="Router")
         expected_keys = {"state", "brightness", "color_temp", "color", "device_type", "last_seen"}
+        assert set(controls.keys()) == expected_keys
+
+    def test_climate_full(self, climate_exposes):
+        controls = map_exposes_to_controls(climate_exposes, device_type="Router")
+        expected_keys = {
+            "occupied_heating_setpoint", "local_temperature",
+            "system_mode", "running_state",
+            "device_type", "last_seen",
+        }
+        assert set(controls.keys()) == expected_keys
+
+    def test_cover_full(self, cover_exposes):
+        controls = map_exposes_to_controls(cover_exposes, device_type="EndDevice")
+        expected_keys = {"position", "tilt", "state", "device_type", "last_seen"}
+        assert set(controls.keys()) == expected_keys
+
+    def test_fan_full(self, fan_exposes):
+        controls = map_exposes_to_controls(fan_exposes)
+        expected_keys = {"state", "mode", "last_seen"}
         assert set(controls.keys()) == expected_keys

@@ -83,7 +83,7 @@
 | `text`, property=`effect` | `text` | зависит от access | — |
 | Пустой property=`""` | — (пропускается) | — | — |
 
-Дополнительно: проверка всех 10 маппингов NUMERIC_TYPE_MAP (`temperature`, `humidity`, `pressure`, `co2`, `noise`, `power`, `voltage`, `current`, `energy`, `illuminance_lux`).
+Дополнительно: проверка всех 12 маппингов NUMERIC_TYPE_MAP (`temperature`, `local_temperature`, `humidity`, `pressure`, `co2`, `noise`, `power`, `voltage`, `current`, `energy`, `illuminance`, `illuminance_lux`).
 
 ### 2.2 Composite features
 
@@ -92,6 +92,9 @@
 | `light` с вложенными `state` + `brightness` + `color_temp` + `color` | 4 контрола: switch + range + range + rgb |
 | `composite` color с `hue` + `saturation` | 1 контрол `rgb` (property=`color`) |
 | `switch` с вложенным `state` | 1 контрол: switch |
+| `climate` с setpoint + local_temp + system_mode + running_state | setpoint→range (writable, min/max), local_temp→temperature (readonly), mode→text+enum (writable), running_state→text+enum (readonly) |
+| `cover` с position + tilt + state | position→range, tilt→range, state→text+enum (writable) |
+| `fan` с state + mode | state→switch (writable), mode→text+enum (writable) |
 
 ### 2.3 Сервисные контролы
 
@@ -110,7 +113,7 @@
 
 ### 2.5 Полные устройства
 
-Проверка на готовых фикстурах: датчик температуры (temperature + humidity + battery + device_type + last_seen), мультисенсор (4 expose + last_seen), цветная лампа (state + brightness + color_temp + color + device_type + last_seen).
+Проверка на готовых фикстурах: датчик температуры (temperature + humidity + battery + device_type + last_seen), мультисенсор (4 expose + last_seen), цветная лампа (state + brightness + color_temp + color + device_type + last_seen), термостат (setpoint + local_temp + system_mode + running_state + device_type + last_seen), жалюзи (position + tilt + state + device_type + last_seen), вентилятор (state + mode + last_seen).
 
 ---
 
@@ -224,7 +227,7 @@ tests/
 ├── conftest.py                      # общие фикстуры, тестовые exposes, --teststand-host
 ├── unit/
 │   ├── test_format_value.py         # ControlMeta.format_value / parse_wb_value (47 тестов)
-│   └── test_expose_mapper.py        # map_exposes_to_controls (22 теста)
+│   └── test_expose_mapper.py        # map_exposes_to_controls (36 тестов)
 └── integration/
     ├── conftest.py                  # MockMQTTClient, фикстура bridge, тестовые устройства
     ├── test_bridge_mock.py          # полный цикл через мок MQTTClient (34 теста)
@@ -272,6 +275,9 @@ tests/
 | `COLOR_LAMP_EXPOSES` / `COLOR_LAMP_DEVICE` | Цветная лампа (state + brightness + color_temp + color, writable) | там же |
 | `ENUM_EXPOSE` | Enum контрол (mode: off/auto/heat/cool) | `tests/conftest.py` |
 | `MULTISENSOR_EXPOSES` | Мультисенсор (temperature + humidity + illuminance + occupancy) | `tests/conftest.py` |
+| `CLIMATE_EXPOSES` | Термостат (setpoint + local_temperature + system_mode + running_state) | `tests/conftest.py` |
+| `COVER_EXPOSES` | Жалюзи (position + tilt + state OPEN/CLOSE/STOP) | `tests/conftest.py` |
+| `FAN_EXPOSES` | Вентилятор (state ON/OFF + mode low/medium/high/auto) | `tests/conftest.py` |
 
 ### Запуск
 

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 # Mapping of z2m property names to WB control types (for numeric exposes)
 NUMERIC_TYPE_MAP: dict[str, str] = {
     ExposeProperty.TEMPERATURE: WbControlType.TEMPERATURE,
+    ExposeProperty.LOCAL_TEMPERATURE: WbControlType.TEMPERATURE,
     ExposeProperty.HUMIDITY: WbControlType.REL_HUMIDITY,
     ExposeProperty.PRESSURE: WbControlType.ATMOSPHERIC_PRESSURE,
     ExposeProperty.CO2: WbControlType.CONCENTRATION,

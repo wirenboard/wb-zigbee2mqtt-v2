@@ -113,7 +113,7 @@
 **Что сделали:**
 
 - Парсинг `bridge/devices`: `Z2MDevice.from_dict()` с `ExposeFeature` (рекурсивный парсинг вложенных features)
-- Маппинг `exposes` → WB-контролы: `expose_mapper.py` с 11 numeric-маппингами, binary, enum, text, rgb (color picker), range (слайдер для writable numerics с min/max)
+- Маппинг `exposes` → WB-контролы: `expose_mapper.py` с 12 numeric-маппингами, binary, enum, text, rgb (color picker), range (слайдер для writable numerics с min/max)
 - Динамическое создание WB-устройств с JSON `/meta` и en/ru переводами
 - Запрос актуального состояния через `{device}/get` при регистрации
 - Подписка на `zigbee2mqtt/{friendly_name}` для обновления состояния в реальном времени
@@ -136,7 +136,7 @@
 |---|---|
 | `z2m/model.py` | + `ExposeFeature`, `ExposeAccess`, `ExposeType`, `ExposeProperty`, `Z2MDevice`, `Z2MEventType.DEVICE_RENAMED`, `DeviceEventType.RENAMED`, поле `old_name` в `DeviceEvent` |
 | `z2m/client.py` | + `subscribe_device`, `unsubscribe_device`, `request_device_state`, обработка `device_renamed` |
-| `wb_converter/expose_mapper.py` | Новый модуль: `map_exposes_to_controls()`, `NUMERIC_TYPE_MAP` (10 типов), `NESTED_TYPES`, `_resolve_wb_type`, `_map_color_feature` (composite color → rgb), auto-range для writable numerics с min/max |
+| `wb_converter/expose_mapper.py` | Новый модуль: `map_exposes_to_controls()`, `NUMERIC_TYPE_MAP` (12 типов), `NESTED_TYPES`, `_resolve_wb_type`, `_map_color_feature` (composite color → rgb), auto-range для writable numerics с min/max |
 | `wb_converter/controls.py` | + `WbControlType` (16 констант, вкл. RANGE, RGB), `ControlMeta.format_value()` (вкл. HS→RGB через `colorsys`), поля `value_on`/`value_off` |
 | `wb_converter/publisher.py` | + `publish_device()`, `publish_device_control()`, `remove_device()` |
 | `registered_device.py` | Новый модуль: `RegisteredDevice` dataclass |
@@ -302,7 +302,7 @@ wb-mqtt-zigbee/
 | `mqtt_client.py` | Зарезервировано для расширения MQTT-клиента | зарезервировано |
 | `z2m/ota.py` | OTA: запрос проверки и запуск обновления | зарезервировано |
 | `wb_converter/controls.py` | `WbControlType` (16 типов, вкл. RANGE, RGB), `BridgeControl`, `ControlMeta` (с `format_value`, `parse_wb_value` и HS↔RGB), `BRIDGE_CONTROLS` (12 контролов с en/ru) | ✅ |
-| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (11 numeric типов, binary, enum, text, rgb для color) | ✅ |
+| `wb_converter/expose_mapper.py` | Маппинг z2m exposes → WB `ControlMeta` (12 numeric типов, binary, enum, text, rgb для color) | ✅ |
 | `wb_converter/publisher.py` | `WbPublisher`: публикация/удаление WB-устройств, JSON `/meta`, подписка на команды | ✅ |
 | ~~`wb_converter/subscriber.py`~~ | Удалён — подписка на команды реализована в `publisher.py` | — |
 

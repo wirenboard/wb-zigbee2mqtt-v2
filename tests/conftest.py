@@ -122,6 +122,99 @@ MULTISENSOR_EXPOSES = [
     },
 ]
 
+CLIMATE_EXPOSES = [
+    {
+        "type": "climate",
+        "features": [
+            {
+                "type": "numeric",
+                "name": "occupied_heating_setpoint",
+                "property": "occupied_heating_setpoint",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE | ExposeAccess.GET,
+                "unit": "°C",
+                "value_min": 7,
+                "value_max": 30,
+            },
+            {
+                "type": "numeric",
+                "name": "local_temperature",
+                "property": "local_temperature",
+                "access": ExposeAccess.READ | ExposeAccess.GET,
+                "unit": "°C",
+            },
+            {
+                "type": "enum",
+                "name": "system_mode",
+                "property": "system_mode",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE | ExposeAccess.GET,
+                "values": ["off", "heat", "cool", "auto"],
+            },
+            {
+                "type": "enum",
+                "name": "running_state",
+                "property": "running_state",
+                "access": ExposeAccess.READ,
+                "values": ["idle", "heat", "cool"],
+            },
+        ],
+    },
+]
+
+COVER_EXPOSES = [
+    {
+        "type": "cover",
+        "features": [
+            {
+                "type": "numeric",
+                "name": "position",
+                "property": "position",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE | ExposeAccess.GET,
+                "value_min": 0,
+                "value_max": 100,
+                "unit": "%",
+            },
+            {
+                "type": "numeric",
+                "name": "tilt",
+                "property": "tilt",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE | ExposeAccess.GET,
+                "value_min": 0,
+                "value_max": 100,
+            },
+            {
+                "type": "enum",
+                "name": "state",
+                "property": "state",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE,
+                "values": ["OPEN", "CLOSE", "STOP"],
+            },
+        ],
+    },
+]
+
+FAN_EXPOSES = [
+    {
+        "type": "fan",
+        "features": [
+            {
+                "type": "binary",
+                "name": "state",
+                "property": "state",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE | ExposeAccess.GET,
+                "value_on": "ON",
+                "value_off": "OFF",
+            },
+            {
+                "type": "enum",
+                "name": "mode",
+                "property": "mode",
+                "access": ExposeAccess.READ | ExposeAccess.WRITE,
+                "values": ["low", "medium", "high", "auto"],
+            },
+        ],
+    },
+]
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -150,3 +243,18 @@ def enum_expose():
 @pytest.fixture
 def multisensor_exposes():
     return [ExposeFeature.from_dict(e) for e in MULTISENSOR_EXPOSES]
+
+
+@pytest.fixture
+def climate_exposes():
+    return [ExposeFeature.from_dict(e) for e in CLIMATE_EXPOSES]
+
+
+@pytest.fixture
+def cover_exposes():
+    return [ExposeFeature.from_dict(e) for e in COVER_EXPOSES]
+
+
+@pytest.fixture
+def fan_exposes():
+    return [ExposeFeature.from_dict(e) for e in FAN_EXPOSES]
