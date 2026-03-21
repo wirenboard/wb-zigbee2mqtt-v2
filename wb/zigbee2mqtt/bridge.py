@@ -121,7 +121,7 @@ class Bridge:
 
     def _register_device(self, device: Z2MDevice) -> None:
         if device.friendly_name in self._known_devices:
-            logger.debug("Device '%s' already registered, skipping", device.friendly_name)
+            self._update_device(device)
             return
         old_name = self._find_old_name(device.ieee_address)
         if old_name is not None:
@@ -147,6 +147,14 @@ class Bridge:
         )
         self._z2m.subscribe_device(device.friendly_name)
         self._z2m.request_device_state(device.friendly_name)
+
+    def _update_device(self, device: Z2MDevice) -> None:
+        """Update metadata for an already-registered device."""
+        registered = self._known_devices[device.friendly_name]
+        if device.type:
+            self._wb.publish_device_control(
+                registered.device_id, "device_type", _DEVICE_TYPE_RU.get(device.type, device.type)
+            )
 
     def _on_device_state(self, friendly_name: str, state: dict[str, object]) -> None:
         registered = self._known_devices.get(friendly_name)
