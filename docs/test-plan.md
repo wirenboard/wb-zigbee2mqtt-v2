@@ -174,7 +174,38 @@
 | Фильтрация = min | `bridge/logging` level=warning | контрол Log обновляется |
 | Фильтрация > min | `bridge/logging` level=error | контрол Log обновляется |
 | Счётчик устройств | `bridge/devices` с 2 устройствами | `Device count` = `"2"` |
-| Обновление устройств | `/on` для Update devices | publish в request/devices/get |
+| Обновление устройств | `/on` для Update devices | re-subscribe на bridge/devices |
+
+### 3.5 Очистка ghost-устройств
+
+| Сценарий | Действие | Проверка |
+|---|---|---|
+| Ghost при старте | retained от предыдущего запуска, устройства нет в z2m | retain-топики очищены |
+| Активное устройство | retained + устройство есть в z2m | meta НЕ удалён |
+| Чужой драйвер | retained с `driver: wb-modbus` | не трогаем |
+
+### 3.6 Валидация MQTT-топиков
+
+| Сценарий | Действие | Проверка |
+|---|---|---|
+| Безопасное имя | `"normal_device"`, `"living room lamp"` | `_is_safe_topic_segment` → `True` |
+| Wildcard `+` | `"device+wildcard"`, `"+"` | `_is_safe_topic_segment` → `False` |
+| Wildcard `#` | `"device#hash"`, `"#"` | `_is_safe_topic_segment` → `False` |
+| Пустое имя | `""` | `_is_safe_topic_segment` → `False` |
+| Устройство с wildcard | `bridge/devices` с `friendly_name: "evil+device"` | устройство не подписано в z2m |
+
+### 3.7 Устойчивость callback'ов
+
+| Сценарий | Действие | Проверка |
+|---|---|---|
+| Битое устройство в списке | `bridge/devices` с невалидным dict + валидным | валидное устройство зарегистрировано |
+
+### 3.8 Обновление exposes зарегистрированного устройства
+
+| Сценарий | Действие | Проверка |
+|---|---|---|
+| Новый expose | повторный `bridge/devices` с доп. expose | новый контрол зарегистрирован (meta опубликован) |
+| Те же exposes | повторный `bridge/devices` без изменений | перерегистрации нет (meta не перепубликован) |
 
 ---
 
@@ -230,7 +261,7 @@ tests/
 │   └── test_expose_mapper.py        # map_exposes_to_controls (36 тестов)
 └── integration/
     ├── conftest.py                  # MockMQTTClient, фикстура bridge, тестовые устройства
-    ├── test_bridge_mock.py          # полный цикл через мок MQTTClient (34 теста)
+    ├── test_bridge_mock.py          # полный цикл через мок MQTTClient (48 тестов)
     └── test_bridge_hw.py            # read-only проверки на тестовом стенде (19 тестов)
 ```
 
@@ -322,7 +353,7 @@ pytest tests/ -v
 ### Новый сценарий интеграции (мок)
 
 1. Добавить тестовое устройство в `tests/integration/conftest.py` (словарь формата `bridge/devices`)
-2. Добавить тест в `tests/integration/test_bridge_mock.py` — в соответствующий класс (`TestReadState`, `TestDeviceControl`, `TestDeviceLifecycle`, `TestBridgeDevice`)
+2. Добавить тест в `tests/integration/test_bridge_mock.py` — в соответствующий класс (`TestReadState`, `TestDeviceControl`, `TestDeviceLifecycle`, `TestBridgeDevice`, `TestGhostDeviceCleanup`, `TestTopicSafety`, `TestCallbackResilience`, `TestExposesUpdate`)
 3. Используй хелпер `register_device(mock_mqtt, DEVICE_DICT)` для регистрации устройства
 4. Обновить таблицы (разделы 3.x)
 

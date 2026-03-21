@@ -149,12 +149,31 @@ class Bridge:
         self._z2m.request_device_state(device.friendly_name)
 
     def _update_device(self, device: Z2MDevice) -> None:
-        """Update metadata for an already-registered device."""
+        """Update metadata and controls for an already-registered device.
+
+        Re-registers controls if exposes have changed (e.g. after firmware update).
+        """
         registered = self._known_devices[device.friendly_name]
         if device.type:
             self._wb.publish_device_control(
                 registered.device_id, "device_type", _DEVICE_TYPE_RU.get(device.type, device.type)
             )
+        if device.exposes:
+            new_controls = map_exposes_to_controls(device.exposes, device_type=device.type)
+            if set(new_controls.keys()) != set(registered.controls.keys()):
+                logger.info(
+                    "Device '%s' exposes changed (%d → %d controls), re-registering",
+                    device.friendly_name, len(registered.controls), len(new_controls),
+                )
+                self._wb.unsubscribe_device_commands(registered.device_id, registered.controls)
+                self._wb.remove_device(registered.device_id, registered.controls)
+                registered.controls = new_controls
+                registered.z2m = device
+                self._wb.publish_device(registered.device_id, device.friendly_name, new_controls)
+                self._wb.subscribe_device_commands(
+                    registered.device_id, new_controls, self._make_device_command_handler(registered),
+                )
+                self._z2m.request_device_state(device.friendly_name)
 
     def _on_device_state(self, friendly_name: str, state: dict[str, object]) -> None:
         registered = self._known_devices.get(friendly_name)

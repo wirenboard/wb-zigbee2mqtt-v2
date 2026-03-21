@@ -14,6 +14,7 @@ from conftest import (
 )
 
 from wb.zigbee2mqtt.bridge import Bridge
+from wb.zigbee2mqtt.z2m.client import _is_safe_topic_segment
 
 
 # ---------------------------------------------------------------------------
@@ -385,3 +386,104 @@ class TestGhostDeviceCleanup:
 
         # Other driver's device should be untouched
         assert mock_mqtt.retained["/devices/wb-modbus-123/meta"] == other_meta
+
+
+# ---------------------------------------------------------------------------
+# 3.6 Topic safety validation
+# ---------------------------------------------------------------------------
+
+class TestTopicSafety:
+
+    @pytest.mark.parametrize("name,expected", [
+        ("normal_device", True),
+        ("living room lamp", True),
+        ("device+wildcard", False),
+        ("device#hash", False),
+        ("#", False),
+        ("+", False),
+        ("", False),
+    ])
+    def test_is_safe_topic_segment(self, name, expected):
+        assert _is_safe_topic_segment(name) == expected
+
+    def test_unsafe_device_not_subscribed(self, bridge, mock_mqtt):
+        """Device with MQTT wildcard in name should not be subscribed."""
+        device = {
+            "ieee_address": "0xdeadbeef00000001",
+            "friendly_name": "evil+device",
+            "type": "Router",
+            "definition": {
+                "model": "TEST",
+                "vendor": "Test",
+                "description": "Test",
+                "exposes": [
+                    {"type": "binary", "name": "state", "property": "state",
+                     "access": 7, "value_on": "ON", "value_off": "OFF"},
+                ],
+            },
+        }
+        register_device(mock_mqtt, device)
+        assert "zigbee2mqtt/evil+device" not in mock_mqtt.subscriptions
+
+
+# ---------------------------------------------------------------------------
+# 3.7 Callback resilience
+# ---------------------------------------------------------------------------
+
+class TestCallbackResilience:
+
+    def test_malformed_device_does_not_block_others(self, bridge, mock_mqtt):
+        """A broken device dict should not prevent parsing of valid devices."""
+        devices_payload = json.dumps([
+            {"type": "EndDevice"},  # missing required fields — will fail from_dict gracefully
+            RELAY_DEVICE,
+        ])
+        mock_mqtt.inject_message("zigbee2mqtt/bridge/devices", devices_payload)
+        # Relay should still be registered
+        assert mock_mqtt.retained.get("/devices/0x00158d0001234567/meta")
+
+
+# ---------------------------------------------------------------------------
+# 3.8 Exposes update for already-registered device
+# ---------------------------------------------------------------------------
+
+class TestExposesUpdate:
+
+    def test_new_expose_triggers_reregistration(self, bridge, mock_mqtt):
+        """When device exposes change, controls should be re-registered."""
+        register_device(mock_mqtt, TEMP_SENSOR_DEVICE)
+        assert mock_mqtt.get_control_value("0xa4c1381b020a8ced", "temperature") == " "
+
+        # Same device with an extra expose
+        updated = {
+            **TEMP_SENSOR_DEVICE,
+            "definition": {
+                **TEMP_SENSOR_DEVICE["definition"],
+                "exposes": [
+                    *TEMP_SENSOR_DEVICE["definition"]["exposes"],
+                    {"type": "numeric", "name": "pressure", "property": "pressure", "access": 1, "unit": "hPa"},
+                ],
+            },
+        }
+        mock_mqtt.inject_message(
+            "zigbee2mqtt/bridge/devices",
+            make_bridge_devices_payload([updated]),
+        )
+        # New control should exist
+        meta = mock_mqtt.get_control_meta("0xa4c1381b020a8ced", "pressure")
+        assert meta["type"] == "atmospheric_pressure"
+
+    def test_same_exposes_no_reregistration(self, bridge, mock_mqtt):
+        """When exposes are identical, no re-registration should happen."""
+        register_device(mock_mqtt, RELAY_DEVICE)
+        publish_count_before = len(mock_mqtt.published)
+
+        # Re-send the same device list
+        mock_mqtt.inject_message(
+            "zigbee2mqtt/bridge/devices",
+            make_bridge_devices_payload([RELAY_DEVICE]),
+        )
+        # Only device_type update should be published, not full re-registration
+        new_publishes = mock_mqtt.published[publish_count_before:]
+        device_meta_publishes = [t for t, _ in new_publishes if t == "/devices/0x00158d0001234567/meta"]
+        assert len(device_meta_publishes) == 0
