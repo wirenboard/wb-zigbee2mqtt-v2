@@ -95,7 +95,7 @@
 
 | Топик | Команда |
 |---|---|
-| `zigbee2mqtt/bridge/devices/get` | Запросить список устройств |
+| re-subscribe `zigbee2mqtt/bridge/devices` | Получить актуальный retained-список устройств (z2m 2.x не поддерживает `bridge/request/devices/get`) |
 | `zigbee2mqtt/bridge/request/permit_join` | Включить/выключить сопряжение |
 | `zigbee2mqtt/{device_name}/set` | Отправить команду устройству |
 | `zigbee2mqtt/{device_name}/get` | Запросить текущее состояние устройства |
@@ -256,6 +256,10 @@ zigbee2mqtt/bridge/devices → устройство с новым friendly_name
   → wb/publisher.py (publish_device) обновляет title в WB
   → device_id (ieee_address) не меняется — WB-устройство остаётся тем же
 ```
+
+### Обновление метаданных зарегистрированных устройств
+
+При повторном получении `bridge/devices` (автоматически или по кнопке «Обновить устройства») для уже зарегистрированных устройств обновляются служебные контролы (`device_type`). Это гарантирует актуальность данных без перезапуска сервиса.
 
 ### Известные ограничения
 
