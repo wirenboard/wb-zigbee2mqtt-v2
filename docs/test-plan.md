@@ -207,6 +207,16 @@
 | Новый expose | повторный `bridge/devices` с доп. expose | новый контрол зарегистрирован (meta опубликован) |
 | Те же exposes | повторный `bridge/devices` без изменений | перерегистрации нет (meta не перепубликован) |
 
+### 3.9 Debounce команд (optimistic update)
+
+| Сценарий | Действие | Проверка |
+|---|---|---|
+| Optimistic publish | команда `/on` для writable контрола | значение опубликовано сразу (без ожидания z2m) |
+| Stale state подавлен | z2m шлёт старое значение в пределах debounce | WB значение не меняется |
+| Подтверждение | z2m шлёт commanded value | pending очищен |
+| Откат по таймауту | debounce истёк, z2m шлёт другое значение | реальное значение опубликовано |
+| Readonly не затронут | state update для датчика | публикуется немедленно, без debounce |
+
 ---
 
 ## 4. Интеграционные тесты на тестовом стенде (read-only)
@@ -261,7 +271,7 @@ tests/
 │   └── test_expose_mapper.py        # map_exposes_to_controls (36 тестов)
 └── integration/
     ├── conftest.py                  # MockMQTTClient, фикстура bridge, тестовые устройства
-    ├── test_bridge_mock.py          # полный цикл через мок MQTTClient (48 тестов)
+    ├── test_bridge_mock.py          # полный цикл через мок MQTTClient (53 теста)
     └── test_bridge_hw.py            # read-only проверки на тестовом стенде (19 тестов)
 ```
 
@@ -353,7 +363,7 @@ pytest tests/ -v
 ### Новый сценарий интеграции (мок)
 
 1. Добавить тестовое устройство в `tests/integration/conftest.py` (словарь формата `bridge/devices`)
-2. Добавить тест в `tests/integration/test_bridge_mock.py` — в соответствующий класс (`TestReadState`, `TestDeviceControl`, `TestDeviceLifecycle`, `TestBridgeDevice`, `TestGhostDeviceCleanup`, `TestTopicSafety`, `TestCallbackResilience`, `TestExposesUpdate`)
+2. Добавить тест в `tests/integration/test_bridge_mock.py` — в соответствующий класс (`TestReadState`, `TestDeviceControl`, `TestDeviceLifecycle`, `TestBridgeDevice`, `TestGhostDeviceCleanup`, `TestTopicSafety`, `TestCallbackResilience`, `TestExposesUpdate`, `TestCommandDebounce`)
 3. Используй хелпер `register_device(mock_mqtt, DEVICE_DICT)` для регистрации устройства
 4. Обновить таблицы (разделы 3.x)
 

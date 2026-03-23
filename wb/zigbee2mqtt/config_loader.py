@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 BRIDGE_DEVICE_ID_DEFAULT = "zigbee2mqtt"
 BRIDGE_DEVICE_NAME_DEFAULT = "Zigbee2MQTT"
 BRIDGE_LOG_MIN_LEVEL_DEFAULT = BridgeLogLevel.WARNING
+COMMAND_DEBOUNCE_SEC_DEFAULT = 5.0
 
 _VALID_LOG_LEVELS = set(BridgeLogLevel.RANK.keys())
 
@@ -24,6 +25,7 @@ class ConfigLoader:
     device_id: str = BRIDGE_DEVICE_ID_DEFAULT
     device_name: str = BRIDGE_DEVICE_NAME_DEFAULT
     bridge_log_min_level: str = BRIDGE_LOG_MIN_LEVEL_DEFAULT
+    command_debounce_sec: float = COMMAND_DEBOUNCE_SEC_DEFAULT
 
 
 def load_config(config_path: str) -> ConfigLoader:
@@ -45,6 +47,7 @@ def load_config(config_path: str) -> ConfigLoader:
             bridge_log_min_level=_validate_log_level(
                 config.get("bridge_log_min_level", BRIDGE_LOG_MIN_LEVEL_DEFAULT)
             ),
+            command_debounce_sec=float(config.get("command_debounce_sec", COMMAND_DEBOUNCE_SEC_DEFAULT)),
         )
     except KeyError as e:
         raise ValueError(f"Missing required configuration key: {e}") from e

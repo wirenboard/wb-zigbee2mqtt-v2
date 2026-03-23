@@ -14,6 +14,7 @@ from conftest import (
 )
 
 from wb.zigbee2mqtt.bridge import Bridge
+from wb.zigbee2mqtt.registered_device import PendingCommand
 from wb.zigbee2mqtt.z2m.client import _is_safe_topic_segment
 
 # ---------------------------------------------------------------------------
@@ -517,3 +518,60 @@ class TestExposesUpdate:
         new_publishes = mock_mqtt.published[publish_count_before:]
         device_meta_publishes = [t for t, _ in new_publishes if t == "/devices/test_relay/meta"]
         assert len(device_meta_publishes) == 0
+
+
+# ---------------------------------------------------------------------------
+# 3.9 Command debounce (optimistic update)
+# ---------------------------------------------------------------------------
+
+
+class TestCommandDebounce:
+
+    def test_optimistic_publish_on_command(self, bridge, mock_mqtt):
+        """Commanding a control should immediately publish the commanded value."""
+        register_device(mock_mqtt, RELAY_DEVICE)
+        mock_mqtt.inject_message("/devices/test_relay/controls/state/on", "1")
+        # Optimistic: value published immediately (without waiting for z2m state)
+        assert mock_mqtt.get_control_value("test_relay", "state") == "1"
+
+    def test_stale_state_suppressed_during_debounce(self, bridge, mock_mqtt):
+        """Stale z2m state arriving after command should be suppressed."""
+        register_device(mock_mqtt, RELAY_DEVICE)
+        # Command: turn ON
+        mock_mqtt.inject_message("/devices/test_relay/controls/state/on", "1")
+        assert mock_mqtt.get_control_value("test_relay", "state") == "1"
+        # Stale state from z2m: still OFF (device hasn't processed command yet)
+        mock_mqtt.inject_message("zigbee2mqtt/test_relay", json.dumps({"state": "OFF"}))
+        # Value should still be "1" (stale suppressed)
+        assert mock_mqtt.get_control_value("test_relay", "state") == "1"
+
+    def test_confirmed_state_clears_pending(self, bridge, mock_mqtt):
+        """When z2m confirms the commanded value, pending is cleared."""
+        register_device(mock_mqtt, RELAY_DEVICE)
+        mock_mqtt.inject_message("/devices/test_relay/controls/state/on", "1")
+        # z2m confirms: device is now ON
+        mock_mqtt.inject_message("zigbee2mqtt/test_relay", json.dumps({"state": "ON"}))
+        # Pending should be cleared — next state update should publish normally
+        registered = bridge._known_devices["test_relay"]
+        assert "state" not in registered.pending_commands
+
+    def test_debounce_expiry_publishes_real_value(self, bridge, mock_mqtt):
+        """After debounce timeout, real z2m state should be published (rollback)."""
+        register_device(mock_mqtt, RELAY_DEVICE)
+        mock_mqtt.inject_message("/devices/test_relay/controls/state/on", "1")
+        # Manually expire the pending command
+        registered = bridge._known_devices["test_relay"]
+        registered.pending_commands["state"].timestamp -= 10  # expired
+        # z2m reports different value → should publish (rollback)
+        mock_mqtt.inject_message("zigbee2mqtt/test_relay", json.dumps({"state": "OFF"}))
+        assert mock_mqtt.get_control_value("test_relay", "state") == "0"
+        assert "state" not in registered.pending_commands
+
+    def test_readonly_controls_not_debounced(self, bridge, mock_mqtt):
+        """Readonly controls (sensors) should never have pending commands."""
+        register_device(mock_mqtt, TEMP_SENSOR_DEVICE)
+        mock_mqtt.inject_message("zigbee2mqtt/temp_sensor", json.dumps({"temperature": 23.5}))
+        assert mock_mqtt.get_control_value("temp_sensor", "temperature") == "23.5"
+        # Rapid update should publish immediately (no debounce on readonly)
+        mock_mqtt.inject_message("zigbee2mqtt/temp_sensor", json.dumps({"temperature": 24.0}))
+        assert mock_mqtt.get_control_value("temp_sensor", "temperature") == "24.0"

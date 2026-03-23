@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 from wb_common.mqtt_client import MQTTClient
 
-from .registered_device import RegisteredDevice
+from .registered_device import PendingCommand, RegisteredDevice
 from .wb_converter.controls import BridgeControl
 from .wb_converter.expose_mapper import map_exposes_to_controls
 from .wb_converter.publisher import WbPublisher
@@ -48,6 +48,7 @@ class Bridge:
         device_id: str,
         device_name: str,
         bridge_log_min_level: str,
+        command_debounce_sec: float = 5.0,
     ) -> None:
         self._z2m = Z2MClient(
             mqtt_client=mqtt_client,
@@ -64,6 +65,7 @@ class Bridge:
         self._log_min_rank = BridgeLogLevel.RANK.get(
             bridge_log_min_level, BridgeLogLevel.RANK[BridgeLogLevel.WARNING]
         )
+        self._command_debounce_sec = command_debounce_sec
         self._messages_received = 0
         self._last_stats_publish = 0.0
         self._known_devices: dict[str, RegisteredDevice] = {}  # friendly_name → RegisteredDevice
@@ -203,9 +205,31 @@ class Bridge:
         if registered is None:
             logger.debug("State update for unknown device '%s', skipping", friendly_name)
             return
+        now = time.monotonic()
         for prop, meta in registered.controls.items():
-            if prop in state and prop != "last_seen":
-                self._wb.publish_device_control(registered.device_id, prop, meta.format_value(state[prop]))
+            if prop not in state or prop == "last_seen":
+                continue
+            wb_value = meta.format_value(state[prop])
+            pending = registered.pending_commands.get(prop)
+            if pending is not None:
+                if wb_value == pending.wb_value:
+                    del registered.pending_commands[prop]
+                    logger.debug("Command confirmed: %s/%s = %s", friendly_name, prop, wb_value)
+                    continue
+                if now - pending.timestamp < self._command_debounce_sec:
+                    logger.debug(
+                        "Suppressing stale state: %s/%s = %s (pending: %s)",
+                        friendly_name,
+                        prop,
+                        wb_value,
+                        pending.wb_value,
+                    )
+                    continue
+                del registered.pending_commands[prop]
+                logger.debug(
+                    "Debounce expired, publishing real value: %s/%s = %s", friendly_name, prop, wb_value
+                )
+            self._wb.publish_device_control(registered.device_id, prop, wb_value)
         if "last_seen" in state:
             formatted = _format_last_seen(state["last_seen"])
             if formatted:
@@ -233,6 +257,10 @@ class Bridge:
                 z2m_value,
             )
             self._z2m.set_device_state(registered.z2m.friendly_name, payload)
+            registered.pending_commands[control_id] = PendingCommand(
+                wb_value=wb_value, timestamp=time.monotonic()
+            )
+            self._wb.publish_device_control(registered.device_id, control_id, wb_value)
 
         return on_command
 
