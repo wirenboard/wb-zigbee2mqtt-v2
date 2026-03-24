@@ -227,7 +227,7 @@ class Bridge:
             return
         now = time.monotonic()
         for prop, meta in registered.controls.items():
-            if prop not in state or prop == "last_seen":
+            if prop not in state or prop in ("last_seen", "update"):
                 continue
             try:
                 wb_value = meta.format_value(state[prop])

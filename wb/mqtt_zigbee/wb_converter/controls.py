@@ -205,7 +205,7 @@ BRIDGE_CONTROLS: dict[str, ControlMeta] = {
         type=WbControlType.PUSHBUTTON,
         readonly=False,
         order=8,
-        title={"en": "Update devices", "ru": "Обновить устройства"},
+        title={"en": "Refresh device list", "ru": "Обновить список"},
     ),
     BridgeControl.LAST_SEEN: ControlMeta(
         type=WbControlType.TEXT,
