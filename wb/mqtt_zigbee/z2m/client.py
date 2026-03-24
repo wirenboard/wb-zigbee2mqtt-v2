@@ -81,7 +81,7 @@ class Z2MClient:
         payload = json.dumps({"time": time})
         self._client.publish(f"{self._base_topic}/bridge/request/permit_join", payload)
 
-    def request_devices_update(self) -> None:
+    def refresh_device_list(self) -> None:
         """Re-subscribe to bridge/devices to receive the retained device list again."""
         topic = f"{self._base_topic}/bridge/devices"
         self._client.unsubscribe(topic)

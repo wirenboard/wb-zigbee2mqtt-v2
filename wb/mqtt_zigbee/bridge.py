@@ -88,7 +88,7 @@ class Bridge:
             )
             self._z2m.subscribe_device(friendly_name)
             self._z2m.request_device_state(friendly_name)
-        self._z2m.request_devices_update()
+        self._z2m.refresh_device_list()
 
     def _publish_bridge(self) -> None:
         self._wb.publish_bridge_device()
@@ -96,7 +96,7 @@ class Bridge:
         self._z2m.subscribe()
         self._wb.subscribe_bridge_commands(
             on_permit_join=self._z2m.set_permit_join,
-            on_update_devices=self._z2m.request_devices_update,
+            on_update_devices=self._z2m.refresh_device_list,
         )
 
     def _update_stats(self) -> None:
