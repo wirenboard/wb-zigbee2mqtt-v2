@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 PERMIT_JOIN_TIME_SEC = 254
 PERMIT_JOIN_TIME_SEC_DISABLED = 0
-_MQTT_UNSAFE_CHARS = {"+", "#", "/"}
 
 
 class Z2MClient:
@@ -90,9 +89,6 @@ class Z2MClient:
 
     def subscribe_device(self, friendly_name: str) -> None:
         """Subscribe to a device's state topic"""
-        if not _is_safe_topic_segment(friendly_name):
-            logger.warning("Refusing to subscribe to device with unsafe name: '%s'", friendly_name)
-            return
         if friendly_name in self._subscribed_devices:
             logger.debug("Already subscribed to '%s', skipping", friendly_name)
             return
@@ -113,14 +109,10 @@ class Z2MClient:
 
     def request_device_state(self, friendly_name: str) -> None:
         """Request current state from a device via zigbee2mqtt/{device}/get"""
-        if not _is_safe_topic_segment(friendly_name):
-            return
         self._client.publish(f"{self._base_topic}/{friendly_name}/get", "{}")
 
     def set_device_state(self, friendly_name: str, payload: dict) -> None:
         """Send command to a device via zigbee2mqtt/{device}/set"""
-        if not _is_safe_topic_segment(friendly_name):
-            return
         self._client.publish(f"{self._base_topic}/{friendly_name}/set", json.dumps(payload))
 
     def _make_device_state_handler(self, friendly_name: str):
@@ -228,17 +220,6 @@ def _parse_json_payload(message: object, topic_name: str) -> Optional[Union[dict
     except json.JSONDecodeError:
         logger.warning("Failed to parse %s payload", topic_name)
         return None
-
-
-def _is_safe_topic_segment(name: str) -> bool:
-    """Check that a device name is safe to use in MQTT topic paths.
-
-    Rejects names containing MQTT wildcard characters (+, #) that could
-    cause subscription to unintended topics.
-    """
-    if not name:
-        return False
-    return not any(ch in name for ch in _MQTT_UNSAFE_CHARS)
 
 
 def _resolve_device_name(device_data: dict) -> str:

@@ -152,6 +152,9 @@ class Bridge:
             self._retained_scan_active = False
 
     def _register_device(self, device: Z2MDevice) -> None:
+        if not _is_safe_topic_name(device.friendly_name):
+            logger.warning("Device '%s' has unsafe name for MQTT topics, skipping", device.friendly_name)
+            return
         if device.friendly_name in self._known_devices:
             self._update_device(device)
             return
@@ -360,6 +363,16 @@ class Bridge:
             old_device_id,
             new_device_id,
         )
+
+
+_MQTT_UNSAFE_CHARS = {"+", "#", "/"}
+
+
+def _is_safe_topic_name(name: str) -> bool:
+    """Check that a device name is safe to use in MQTT topic paths."""
+    if not name:
+        return False
+    return not any(ch in name for ch in _MQTT_UNSAFE_CHARS)
 
 
 def _sanitize_device_id(name: str) -> str:
