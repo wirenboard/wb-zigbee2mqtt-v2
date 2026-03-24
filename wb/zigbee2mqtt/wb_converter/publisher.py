@@ -4,7 +4,7 @@ from typing import Callable
 
 from wb_common.mqtt_client import MQTTClient
 
-from .controls import BRIDGE_CONTROLS, BridgeControl, ControlMeta
+from .controls import BRIDGE_CONTROLS, BridgeControl, ControlMeta, WbBoolValue
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ class WbPublisher:
 
         def handle_permit_join(_client: object, _userdata: object, message: object) -> None:
             value = message.payload.decode("utf-8").strip()
-            on_permit_join(value == "1")
+            on_permit_join(value == WbBoolValue.TRUE)
 
         def handle_update_devices(_client: object, _userdata: object, _message: object) -> None:
             on_update_devices()

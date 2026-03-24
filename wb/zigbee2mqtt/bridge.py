@@ -7,7 +7,7 @@ from typing import Callable, Optional
 from wb_common.mqtt_client import MQTTClient
 
 from .registered_device import PendingCommand, RegisteredDevice
-from .wb_converter.controls import BridgeControl
+from .wb_converter.controls import BridgeControl, WbBoolValue
 from .wb_converter.expose_mapper import map_exposes_to_controls
 from .wb_converter.publisher import WbPublisher
 from .z2m.client import Z2MClient
@@ -128,7 +128,10 @@ class Bridge:
     def _on_bridge_info(self, info: BridgeInfo) -> None:
         logger.info("Bridge info: version=%s, permit_join=%s", info.version, info.permit_join)
         self._wb.publish_bridge_control(BridgeControl.VERSION, info.version)
-        self._wb.publish_bridge_control(BridgeControl.PERMIT_JOIN, "1" if info.permit_join else "0")
+        self._wb.publish_bridge_control(
+            BridgeControl.PERMIT_JOIN,
+            WbBoolValue.TRUE if info.permit_join else WbBoolValue.FALSE,
+        )
         self._update_stats()
 
     def _on_bridge_log(self, level: str, message: str) -> None:

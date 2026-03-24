@@ -28,6 +28,13 @@ class WbControlType:
     RGB = "rgb"
 
 
+class WbBoolValue:
+    """WB MQTT Conventions: boolean values in control topics"""
+
+    TRUE = "1"
+    FALSE = "0"
+
+
 class BridgeControl:
     """Control IDs for the zigbee2mqtt bridge virtual device"""
 
@@ -64,9 +71,9 @@ class ControlMeta:
         if value is None:
             return ""
         if isinstance(value, bool):
-            return "1" if value else "0"
+            return WbBoolValue.TRUE if value else WbBoolValue.FALSE
         if self.type == WbControlType.SWITCH and self.value_on is not None:
-            return "1" if str(value) == self.value_on else "0"
+            return WbBoolValue.TRUE if str(value) == self.value_on else WbBoolValue.FALSE
         if self.type == WbControlType.RGB and isinstance(value, dict):
             return _hs_dict_to_wb_rgb(value)
         if isinstance(value, dict):
@@ -77,8 +84,8 @@ class ControlMeta:
         """Convert a WB control value to z2m format (reverse of format_value)"""
         if self.type == WbControlType.SWITCH:
             if self.value_on is not None:
-                return self.value_on if wb_value == "1" else self.value_off
-            return wb_value == "1"
+                return self.value_on if wb_value == WbBoolValue.TRUE else self.value_off
+            return wb_value == WbBoolValue.TRUE
         if self.type == WbControlType.RGB:
             return _wb_rgb_to_hs_dict(wb_value)
         if self.type == WbControlType.TEXT:
