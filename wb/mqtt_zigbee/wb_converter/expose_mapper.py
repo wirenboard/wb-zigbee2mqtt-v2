@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 # Mapping of z2m property names to WB control types (for numeric exposes)
 NUMERIC_TYPE_MAP: dict[str, str] = {
     ExposeProperty.TEMPERATURE: WbControlType.TEMPERATURE,
+    ExposeProperty.LOCAL_TEMPERATURE: WbControlType.TEMPERATURE,
     ExposeProperty.HUMIDITY: WbControlType.REL_HUMIDITY,
     ExposeProperty.PRESSURE: WbControlType.ATMOSPHERIC_PRESSURE,
     ExposeProperty.CO2: WbControlType.CONCENTRATION,
@@ -17,26 +18,27 @@ NUMERIC_TYPE_MAP: dict[str, str] = {
     ExposeProperty.VOLTAGE: WbControlType.VOLTAGE,
     ExposeProperty.CURRENT: WbControlType.CURRENT,
     ExposeProperty.ENERGY: WbControlType.POWER_CONSUMPTION,
+    ExposeProperty.ILLUMINANCE: WbControlType.ILLUMINANCE,
     ExposeProperty.ILLUMINANCE_LUX: WbControlType.ILLUMINANCE,
 }
 
 # Specific/composite expose types that contain nested features
 NESTED_TYPES = {
-    ExposeType.LIGHT,      # dimmable lights, color lights
-    ExposeType.SWITCH,     # on/off switches, smart plugs
-    ExposeType.LOCK,       # door locks
-    ExposeType.CLIMATE,    # thermostats, AC controllers
-    ExposeType.FAN,        # fans, ventilation
-    ExposeType.COVER,      # blinds, curtains, shutters
+    ExposeType.LIGHT,  # dimmable lights, color lights
+    ExposeType.SWITCH,  # on/off switches, smart plugs
+    ExposeType.LOCK,  # door locks
+    ExposeType.CLIMATE,  # thermostats, AC controllers
+    ExposeType.FAN,  # fans, ventilation
+    ExposeType.COVER,  # blinds, curtains, shutters
     ExposeType.COMPOSITE,  # generic multi-property exposes
 }
 
 
-def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMeta]:
+def map_exposes_to_controls(exposes: list[ExposeFeature], device_type: str = "") -> dict[str, ControlMeta]:
     """Convert a list of z2m expose features into a flat dict of WB controls.
 
     Recursively flattens all exposes, deduplicates by property name,
-    assigns sequential order, and appends a "last_seen" text control.
+    assigns sequential order, and appends service controls (device_type, last_seen).
 
     Example:
 
@@ -44,11 +46,12 @@ def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMe
             ExposeFeature(type="numeric", name="temperature", property="temperature"),
             ExposeFeature(type="numeric", name="humidity", property="humidity"),
         ]
-        controls = map_exposes_to_controls(exposes)
+        controls = map_exposes_to_controls(exposes, device_type="Router")
         # {
         #     "temperature": ControlMeta(type="temperature", order=1, ...),
         #     "humidity": ControlMeta(type="rel_humidity", order=2, ...),
-        #     "last_seen": ControlMeta(type="text", order=3, ...),
+        #     "device_type": ControlMeta(type="text", order=3, ...),
+        #     "last_seen": ControlMeta(type="text", order=4, ...),
         # }
     """
     controls: dict[str, ControlMeta] = {}
@@ -59,8 +62,18 @@ def map_exposes_to_controls(exposes: list[ExposeFeature]) -> dict[str, ControlMe
                 meta.order = order
                 controls[prop] = meta
                 order += 1
+    if device_type:
+        controls["device_type"] = ControlMeta(
+            type=WbControlType.TEXT,
+            readonly=True,
+            order=order,
+            title={"en": "Device type", "ru": "Тип устройства"},
+        )
+        order += 1
     controls["last_seen"] = ControlMeta(
-        type=WbControlType.TEXT, readonly=True, order=order,
+        type=WbControlType.TEXT,
+        readonly=True,
+        order=order,
         title={"en": "Last seen", "ru": "Последняя активность"},
     )
     return controls
@@ -123,10 +136,25 @@ def _map_leaf_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
         return []
 
     title = _make_title(feature.property)
+    enum = _make_enum(feature) if feature.type == ExposeType.ENUM else None
+    # Writable numerics with min/max → range (slider), not value (text input)
+    if (
+        wb_type == WbControlType.VALUE
+        and feature.is_writable
+        and feature.value_min is not None
+        and feature.value_max is not None
+    ):
+        wb_type = WbControlType.RANGE
+
     meta = ControlMeta(
-        type=wb_type, readonly=True,
+        type=wb_type,
+        readonly=not feature.is_writable,
         title={"en": title},
-        value_on=feature.value_on, value_off=feature.value_off,
+        value_on=feature.value_on,
+        value_off=feature.value_off,
+        enum=enum,
+        min=feature.value_min,
+        max=feature.value_max,
     )
     return [(feature.property, meta)]
 
@@ -147,11 +175,20 @@ def _map_color_feature(feature: ExposeFeature) -> list[tuple[str, ControlMeta]]:
         _map_color_feature(feature)
         # [("color", ControlMeta(type="rgb", readonly=True, title={"en": "Color"}))]
     """
+    writable = any(sub.is_writable for sub in feature.features) if feature.features else False
     meta = ControlMeta(
-        type=WbControlType.RGB, readonly=True,
+        type=WbControlType.RGB,
+        readonly=not writable,
         title={"en": "Color", "ru": "Цвет"},
     )
     return [(feature.property, meta)]
+
+
+def _make_enum(feature: ExposeFeature) -> Optional[dict]:
+    """Build WB enum dict from z2m enum values: {"off": 0, "on": 1, ...}"""
+    if not feature.values:
+        return None
+    return {val: idx for idx, val in enumerate(feature.values)}
 
 
 def _make_title(property_name: str) -> str:

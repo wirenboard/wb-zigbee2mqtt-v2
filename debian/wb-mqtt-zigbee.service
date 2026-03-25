@@ -1,11 +1,11 @@
 [Unit]
-Description=Wiren Board Zigbee2MQTT bridge v2
+Description=Wiren Board Zigbee2MQTT bridge
 After=NetworkManager.service mosquitto.service
 
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/wb-zigbee2mqtt
+ExecStart=/usr/bin/wb-mqtt-zigbee
 Restart=on-failure
 RestartSec=10
 RestartPreventExitStatus=2 6

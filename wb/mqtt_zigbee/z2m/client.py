@@ -4,7 +4,14 @@ from typing import Callable, Optional, Union
 
 from wb_common.mqtt_client import MQTTClient
 
-from .model import BridgeInfo, BridgeState, DeviceEvent, DeviceEventType, Z2MDevice, Z2MEventType
+from .model import (
+    BridgeInfo,
+    BridgeState,
+    DeviceEvent,
+    DeviceEventType,
+    Z2MDevice,
+    Z2MEventType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +80,12 @@ class Z2MClient:
         payload = json.dumps({"time": time})
         self._client.publish(f"{self._base_topic}/bridge/request/permit_join", payload)
 
-    def request_devices_update(self) -> None:
-        """Request zigbee2mqtt to republish the devices list"""
-        self._client.publish(f"{self._base_topic}/bridge/request/devices/get", "{}")
+    def refresh_device_list(self) -> None:
+        """Re-subscribe to bridge/devices to receive the retained device list again."""
+        topic = f"{self._base_topic}/bridge/devices"
+        self._client.unsubscribe(topic)
+        self._client.subscribe(topic)
+        self._client.message_callback_add(topic, self._handle_bridge_devices)
 
     def subscribe_device(self, friendly_name: str) -> None:
         """Subscribe to a device's state topic"""
@@ -101,11 +111,16 @@ class Z2MClient:
         """Request current state from a device via zigbee2mqtt/{device}/get"""
         self._client.publish(f"{self._base_topic}/{friendly_name}/get", "{}")
 
+    def set_device_state(self, friendly_name: str, payload: dict) -> None:
+        """Send command to a device via zigbee2mqtt/{device}/set"""
+        self._client.publish(f"{self._base_topic}/{friendly_name}/set", json.dumps(payload))
+
     def _make_device_state_handler(self, friendly_name: str):
         def handler(_client: object, _userdata: object, message: object) -> None:
             data = _parse_json_payload(message, friendly_name)
             if data is not None:
                 self._on_device_state(friendly_name, data)
+
         return handler
 
     def _handle_bridge_state(self, _client: object, _userdata: object, message: object) -> None:
@@ -138,7 +153,7 @@ class Z2MClient:
         try:
             data = json.loads(message.payload.decode("utf-8"))
             log_level: str = data.get("level", "info")
-            log_message: Optional[str] = data.get("message", "")
+            log_message: str = str(data.get("message", ""))
         except json.JSONDecodeError:
             log_level = "info"
             log_message = message.payload.decode("utf-8")
@@ -152,7 +167,12 @@ class Z2MClient:
         devices = []
         for device_data in data:
             if device_data.get("type") != "Coordinator":
-                devices.append(Z2MDevice.from_dict(device_data))
+                try:
+                    devices.append(Z2MDevice.from_dict(device_data))
+                except Exception:  # pylint: disable=broad-except
+                    logger.exception(
+                        "Failed to parse device: %s", device_data.get("friendly_name", device_data)
+                    )
         self._on_devices(devices)
 
     def _handle_bridge_event(self, _client: object, _userdata: object, message: object) -> None:
@@ -168,16 +188,20 @@ class Z2MClient:
         }
         mapped = event_map.get(event_type)
         if mapped:
-            self._on_device_event(DeviceEvent(
-                type=mapped,
-                name=_resolve_device_name(device_data),
-            ))
+            self._on_device_event(
+                DeviceEvent(
+                    type=mapped,
+                    name=_resolve_device_name(device_data),
+                )
+            )
         elif event_type == Z2MEventType.DEVICE_RENAMED:
-            self._on_device_event(DeviceEvent(
-                type=DeviceEventType.RENAMED,
-                name=device_data.get("to", ""),
-                old_name=device_data.get("from", ""),
-            ))
+            self._on_device_event(
+                DeviceEvent(
+                    type=DeviceEventType.RENAMED,
+                    name=device_data.get("to", ""),
+                    old_name=device_data.get("from", ""),
+                )
+            )
 
     def _handle_device_remove_response(self, _client: object, _userdata: object, message: object) -> None:
         """Parse bridge/response/device/remove, emit REMOVED event on success"""

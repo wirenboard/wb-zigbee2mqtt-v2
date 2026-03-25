@@ -33,12 +33,17 @@ class WbZigbee2Mqtt:  # pylint: disable=too-few-public-methods
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGHUP, self._signal_handler)
 
-        self._client = MQTTClient("wb-zigbee2mqtt", broker_url=config.broker_url, is_threaded=False)
+        self._client = MQTTClient("wb-mqtt-zigbee", broker_url=config.broker_url, is_threaded=False)
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
 
         self._bridge = Bridge(
-            self._client, config.zigbee2mqtt_base_topic, config.device_id, config.device_name, config.bridge_log_min_level
+            self._client,
+            config.zigbee2mqtt_base_topic,
+            config.device_id,
+            config.device_name,
+            config.bridge_log_min_level,
+            config.command_debounce_sec,
         )
 
     def _on_connect(self, _client: object, _userdata: object, _flags: dict, rc: int) -> None:

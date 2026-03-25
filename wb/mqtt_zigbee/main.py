@@ -2,8 +2,8 @@ import argparse
 import logging
 import sys
 
-from .config_loader import CONFIG_FILEPATH, load_config
 from .app import EXIT_CONFIG_ERROR, WbZigbee2Mqtt
+from .config_loader import CONFIG_FILEPATH, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def setup_logging() -> None:
 def main(argv: list) -> int:
     setup_logging()
 
-    parser = argparse.ArgumentParser(description="Wiren Board Zigbee2MQTT bridge v2")
+    parser = argparse.ArgumentParser(description="Wiren Board Zigbee2MQTT bridge")
     parser.add_argument(
         "-c",
         "--config",
@@ -34,6 +34,6 @@ def main(argv: list) -> int:
         logger.error("%s", e)
         return EXIT_CONFIG_ERROR
 
-    logger.info("Starting wb-zigbee2mqtt-v2, broker: %s", config.broker_url)
+    logger.info("Starting wb-mqtt-zigbee, broker: %s", config.broker_url)
     service = WbZigbee2Mqtt(config)
     return service.run()
