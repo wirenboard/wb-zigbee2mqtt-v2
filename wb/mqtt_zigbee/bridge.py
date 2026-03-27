@@ -59,6 +59,7 @@ class Bridge:
             on_devices=self._on_devices,
             on_device_event=self._on_device_event,
             on_device_state=self._on_device_state,
+            on_device_availability=self._on_device_availability,
         )
         self._wb = WbPublisher(mqtt_client, device_id, device_name)
         self._bridge_log_min_level = bridge_log_min_level
@@ -220,6 +221,15 @@ class Bridge:
                 )
                 self._z2m.request_device_state(device.friendly_name)
 
+    def _on_device_availability(self, friendly_name: str, available: bool) -> None:
+        registered = self._known_devices.get(friendly_name)
+        if registered is None:
+            logger.debug("Availability update for unknown device '%s', skipping", friendly_name)
+            return
+        wb_value = WbBoolValue.TRUE if available else WbBoolValue.FALSE
+        self._wb.publish_device_control(registered.device_id, "available", wb_value)
+        logger.debug("Device availability: %s = %s", friendly_name, "online" if available else "offline")
+
     def _on_device_state(self, friendly_name: str, state: dict[str, object]) -> None:
         registered = self._known_devices.get(friendly_name)
         if registered is None:
@@ -258,6 +268,7 @@ class Bridge:
             formatted = _format_last_seen(state["last_seen"])
             if formatted:
                 self._wb.publish_device_control(registered.device_id, "last_seen", formatted)
+        self._wb.publish_device_control(registered.device_id, "available", WbBoolValue.TRUE)
         self._update_stats()
 
     def _make_device_command_handler(self, registered: RegisteredDevice) -> Callable[[str, str], None]:
