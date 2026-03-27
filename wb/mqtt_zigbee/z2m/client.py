@@ -7,6 +7,7 @@ from wb_common.mqtt_client import MQTTClient
 from .model import (
     BridgeInfo,
     BridgeState,
+    DeviceAvailability,
     DeviceEvent,
     DeviceEventType,
     Z2MDevice,
@@ -32,6 +33,7 @@ class Z2MClient:
         on_devices: Callable[[list[Z2MDevice]], None],
         on_device_event: Callable[[DeviceEvent], None],
         on_device_state: Callable[[str, dict[str, object]], None],  # (friendly_name, z2m state JSON)
+        on_device_availability: Callable[[str, bool], None],  # (friendly_name, is_online)
     ) -> None:
         """
         Args:
@@ -43,6 +45,7 @@ class Z2MClient:
             on_devices: called with list of Z2MDevice (excluding Coordinator)
             on_device_event: called with DeviceEvent on join/leave/remove
             on_device_state: called with (friendly_name, state_dict) on device state updates
+            on_device_availability: called with (friendly_name, is_online) on availability updates
         """
         self._client = mqtt_client
         self._base_topic = base_topic
@@ -52,6 +55,7 @@ class Z2MClient:
         self._on_devices = on_devices
         self._on_device_event = on_device_event
         self._on_device_state = on_device_state
+        self._on_device_availability = on_device_availability
         self._subscribed_devices: set[str] = set()
 
     def subscribe(self) -> None:
@@ -72,6 +76,9 @@ class Z2MClient:
         for topic, handler in subscriptions:
             self._client.subscribe(topic)
             self._client.message_callback_add(topic, handler)
+        availability_topic = f"{self._base_topic}/+/availability"
+        self._client.subscribe(availability_topic)
+        self._client.message_callback_add(availability_topic, self._handle_device_availability)
         self._subscribed_devices.clear()
 
     def set_permit_join(self, enabled: bool) -> None:
@@ -122,6 +129,22 @@ class Z2MClient:
                 self._on_device_state(friendly_name, data)
 
         return handler
+
+    def _handle_device_availability(self, _client: object, _userdata: object, message: object) -> None:
+        """Parse +/availability: {"state": "online"} or {"state": "offline"}"""
+        # topic: <base_topic>/<friendly_name>/availability
+        prefix = self._base_topic + "/"
+        suffix = "/availability"
+        if not message.topic.startswith(prefix) or not message.topic.endswith(suffix):
+            return
+        friendly_name = message.topic[len(prefix) : -len(suffix)]
+        if friendly_name == "bridge":
+            return
+        data = _parse_json_payload(message, f"{friendly_name}/availability")
+        if data is None:
+            return
+        state = data.get("state", "")
+        self._on_device_availability(friendly_name, state == DeviceAvailability.ONLINE)
 
     def _handle_bridge_state(self, _client: object, _userdata: object, message: object) -> None:
         """Parse bridge/state: may be plain string or JSON {"state": "..."}"""
