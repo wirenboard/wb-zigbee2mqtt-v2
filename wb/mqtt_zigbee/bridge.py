@@ -72,6 +72,7 @@ class Bridge:
         self._known_devices: dict[str, RegisteredDevice] = {}  # friendly_name → RegisteredDevice
         self._ieee_to_name: dict[str, str] = {}  # ieee_address → friendly_name
         self._retained_scan_active = False
+        self._reconnect_count = 0
 
     def subscribe(self) -> None:
         self._wb.start_retained_scan()
@@ -86,7 +87,9 @@ class Bridge:
             self._wb.publish_device_control(registered.device_id, "available", WbBoolValue.FALSE)
 
     def republish(self) -> None:
+        self._reconnect_count += 1
         self._publish_bridge()
+        self._wb.publish_bridge_control(BridgeControl.RECONNECTS, str(self._reconnect_count))
         for friendly_name, registered in self._known_devices.items():
             registered.availability_received = False
             self._wb.publish_device(
