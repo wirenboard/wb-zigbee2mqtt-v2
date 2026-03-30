@@ -1,7 +1,8 @@
 import json
 import logging
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
+from paho.mqtt.client import Client, MQTTMessage
 from wb_common.mqtt_client import MQTTClient
 
 from .controls import BRIDGE_CONTROLS, BridgeControl, ControlMeta, WbBoolValue
@@ -92,7 +93,7 @@ class WbPublisher:
         """Return control_ids discovered for a given device_id."""
         return self._scanned_controls.get(device_id, set())
 
-    def _on_retained_device_meta(self, _client: object, _userdata: object, message: object) -> None:
+    def _on_retained_device_meta(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Callback for /devices/+/meta: collect device_ids with our driver."""
         payload = message.payload.decode("utf-8").strip()
         if not payload:
@@ -108,7 +109,7 @@ class WbPublisher:
         if len(parts) >= 3:
             self._scanned_our_ids.add(parts[2])
 
-    def _on_retained_control_meta(self, _client: object, _userdata: object, message: object) -> None:
+    def _on_retained_control_meta(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Callback for /devices/+/controls/+/meta: collect control_ids per device."""
         payload = message.payload.decode("utf-8").strip()
         if not payload:
@@ -137,11 +138,11 @@ class WbPublisher:
         self._client.subscribe(permit_join_topic)
         self._client.subscribe(update_devices_topic)
 
-        def handle_permit_join(_client: object, _userdata: object, message: object) -> None:
+        def handle_permit_join(_client: Client, _userdata: Any, message: MQTTMessage) -> None:
             value = message.payload.decode("utf-8").strip()
             on_permit_join(value == WbBoolValue.TRUE)
 
-        def handle_update_devices(_client: object, _userdata: object, _message: object) -> None:
+        def handle_update_devices(_client: Client, _userdata: Any, _message: MQTTMessage) -> None:
             on_update_devices()
 
         self._client.message_callback_add(permit_join_topic, handle_permit_join)
@@ -227,7 +228,7 @@ class WbPublisher:
 def _make_command_handler(control_id: str, on_command: Callable[[str, str], None]):
     """Create MQTT message handler that extracts payload and calls on_command(control_id, value)"""
 
-    def handler(_client: object, _userdata: object, message: object) -> None:
+    def handler(_client: Client, _userdata: Any, message: MQTTMessage) -> None:
         value = message.payload.decode("utf-8").strip()
         on_command(control_id, value)
 

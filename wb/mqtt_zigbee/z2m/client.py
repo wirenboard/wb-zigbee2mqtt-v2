@@ -1,7 +1,8 @@
 import json
 import logging
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
+from paho.mqtt.client import Client, MQTTMessage
 from wb_common.mqtt_client import MQTTClient
 
 from .model import (
@@ -123,14 +124,14 @@ class Z2MClient:
         self._client.publish(f"{self._base_topic}/{friendly_name}/set", json.dumps(payload))
 
     def _make_device_state_handler(self, friendly_name: str):
-        def handler(_client: object, _userdata: object, message: object) -> None:
+        def handler(_client: Client, _userdata: Any, message: MQTTMessage) -> None:
             data = _parse_json_payload(message, friendly_name)
             if data is not None:
                 self._on_device_state(friendly_name, data)
 
         return handler
 
-    def _handle_device_availability(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_device_availability(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse +/availability: {"state": "online"} or {"state": "offline"}"""
         # topic: <base_topic>/<friendly_name>/availability
         prefix = self._base_topic + "/"
@@ -146,7 +147,7 @@ class Z2MClient:
         state = data.get("state", "")
         self._on_device_availability(friendly_name, state == DeviceAvailability.ONLINE)
 
-    def _handle_bridge_state(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_bridge_state(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/state: may be plain string or JSON {"state": "..."}"""
         raw = message.payload.decode("utf-8").strip()
         try:
@@ -159,7 +160,7 @@ class Z2MClient:
             return
         self._on_bridge_state(state)
 
-    def _handle_bridge_info(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_bridge_info(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/info JSON into BridgeInfo and forward to callback"""
         data = _parse_json_payload(message, "bridge/info")
         if data is None:
@@ -171,7 +172,7 @@ class Z2MClient:
         )
         self._on_bridge_info(info)
 
-    def _handle_bridge_log(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_bridge_log(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/logging JSON, extract level and message. Falls back to raw string on error"""
         try:
             data = json.loads(message.payload.decode("utf-8"))
@@ -182,7 +183,7 @@ class Z2MClient:
             log_message = message.payload.decode("utf-8")
         self._on_bridge_log(log_level, log_message or "")
 
-    def _handle_bridge_devices(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_bridge_devices(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/devices JSON array into Z2MDevice list (excluding Coordinator)"""
         data = _parse_json_payload(message, "bridge/devices")
         if data is None:
@@ -198,7 +199,7 @@ class Z2MClient:
                     )
         self._on_devices(devices)
 
-    def _handle_bridge_event(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_bridge_event(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/event JSON, map device_joined/device_leave to DeviceEvent"""
         data = _parse_json_payload(message, "bridge/event")
         if data is None:
@@ -226,7 +227,7 @@ class Z2MClient:
                 )
             )
 
-    def _handle_device_remove_response(self, _client: object, _userdata: object, message: object) -> None:
+    def _handle_device_remove_response(self, _client: Client, _userdata: Any, message: MQTTMessage) -> None:
         """Parse bridge/response/device/remove, emit REMOVED event on success"""
         data = _parse_json_payload(message, "bridge/response/device/remove")
         if data is None:
@@ -236,7 +237,7 @@ class Z2MClient:
             self._on_device_event(DeviceEvent(type=DeviceEventType.REMOVED, name=name))
 
 
-def _parse_json_payload(message: object, topic_name: str) -> Optional[Union[dict, list]]:
+def _parse_json_payload(message: MQTTMessage, topic_name: str) -> Optional[Union[dict, list]]:
     """Decode MQTT message payload as JSON. Returns None and logs warning on failure"""
     try:
         return json.loads(message.payload.decode("utf-8"))
