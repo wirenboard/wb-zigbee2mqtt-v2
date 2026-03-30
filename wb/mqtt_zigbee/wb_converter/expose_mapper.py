@@ -41,7 +41,7 @@ def map_exposes_to_controls(exposes: list[ExposeFeature], device_type: str = "")
     """Convert a list of z2m expose features into a flat dict of WB controls.
 
     Recursively flattens all exposes, deduplicates by property name,
-    assigns sequential order, and appends service controls (device_type, last_seen).
+    assigns sequential order, and appends service controls (available, device_type, last_seen).
 
     Example:
 
