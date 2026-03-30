@@ -24,6 +24,7 @@ fi
 # This allows our service to track online/offline status of Zigbee devices.
 Z2M_CONFIG="/mnt/data/root/zigbee2mqtt/data/configuration.yaml"
 if [ -f "$Z2M_CONFIG" ] && ! grep -q "^availability:" "$Z2M_CONFIG"; then
+    echo "" >> "$Z2M_CONFIG"
     cat >> "$Z2M_CONFIG" << 'EOF'
 availability:
   enabled: true
