@@ -94,7 +94,7 @@
 
 #### update_devices
 
-Re-subscribe на `zigbee2mqtt/bridge/devices` (unsubscribe + subscribe) — брокер повторно доставит retained-сообщение. В z2m 2.x топик `bridge/request/devices/get` удалён.
+Re-subscribe на `zigbee2mqtt/bridge/devices` (unsubscribe + subscribe) — брокер повторно доставит retained-сообщение. В z2m 2.x топик `bridge/request/devices` не поддерживается (запрос игнорируется). Если retained потерян (рестарт mosquitto без persistence), re-subscribe не поможет — требуется рестарт z2m.
 
 #### Модули
 
