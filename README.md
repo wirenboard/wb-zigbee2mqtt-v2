@@ -29,6 +29,38 @@
 - Отслеживание доступности устройств (online/offline)
 - Поддержка переименования и удаления устройств через zigbee2mqtt
 
+
+## Как это работает
+
+zigbee2mqtt подключается к Zigbee-координатору, обнаруживает устройства и публикует всю информацию в MQTT-брокер. Пространство топиков настраивается в конфиге zigbee2mqtt (`/mnt/data/root/zigbee2mqtt/data/configuration.yaml`, параметр `base_topic`), по умолчанию — `zigbee2mqtt/`:
+
+```
+zigbee2mqtt/bridge/state       → "online"
+zigbee2mqtt/bridge/info        → {"version": "2.1.0", "permit_join": false, ...}
+zigbee2mqtt/bridge/devices     → [{...}, {...}, ...]
+zigbee2mqtt/bridge/logging     → {"level": "info", "message": "..."}
+zigbee2mqtt/bridge/event       → {"type": "device_joined", "data": {...}}
+zigbee2mqtt/living_room_sensor → {"temperature": 23.5, "humidity": 45}
+```
+
+Wiren Board работает с другим форматом — [WB MQTT Conventions](https://github.com/wirenboard/conventions), где каждое устройство представлено набором топиков вида `/devices/{id}/controls/{name}`.
+
+**wb-mqtt-zigbee** связывает эти два мира:
+
+1. **Подписывается** на топики `zigbee2mqtt/` и получает состояние моста, список устройств, логи и события
+2. **Создает виртуальные WB-устройства** в `/devices/` — публикует метаданные (`/meta`) и значения контролов по WB MQTT Conventions
+3. **Транслирует команды обратно** — когда пользователь нажимает кнопку или переключает переключатель в WB UI, сервис получает команду из `/devices/.../on` и публикует соответствующий запрос в `zigbee2mqtt/bridge/request/...`
+
+```
+Zigbee-устройства
+       │ Zigbee
+       ▼
+   zigbee2mqtt ──── MQTT ────► wb-mqtt-zigbee ──── MQTT ────► Wiren Board UI
+              zigbee2mqtt/*                     /devices/*
+              ◄──── MQTT ────                   ◄──── MQTT ────
+              запросы (set/get)                 команды (/on)
+```
+
 ## Документация для разработчиков
 
 - [docs/arc42.md](docs/arc42.md) — архитектура (arc42)
