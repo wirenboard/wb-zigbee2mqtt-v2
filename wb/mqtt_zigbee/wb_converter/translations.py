@@ -76,6 +76,7 @@ PROPERTY_TITLES: dict[str, dict[str, str]] = {
     # --- Switches / plugs ---
     "power_outage_memory": {"en": "Power Outage Memory", "ru": "Состояние после сбоя питания"},
     "switch_actions": {"en": "Switch Actions", "ru": "Действия выключателя"},
+    "switch_mode": {"en": "Switch Mode", "ru": "Режим клавиши"},
     "power_on_behavior": {"en": "Power-On Behavior", "ru": "Поведение при включении"},
     "child_lock": {"en": "Child Lock", "ru": "Блокировка от детей"},
     "button_lock": {"en": "Button Lock", "ru": "Блокировка кнопок"},
@@ -90,6 +91,9 @@ PROPERTY_TITLES: dict[str, dict[str, str]] = {
     # --- Climate / thermostat ---
     "temperature_display_mode": {"en": "Temperature Display Mode", "ru": "Отображение температуры"},
     "sensor": {"en": "Sensor", "ru": "Датчик"},
+    "room_status_code": {"en": "Room Status", "ru": "Состояние комнаты"},
+    "room_floor_sensor_mode": {"en": "Floor Sensor Mode", "ru": "Режим датчика пола"},
+    "setpoint_change_source": {"en": "Setpoint Change Source", "ru": "Источник изменения уставки"},
     "ac_connected": {"en": "AC Connected", "ru": "Связь с кондиционером"},
     "system_mode": {"en": "System Mode", "ru": "Режим работы"},
     "running_state": {"en": "Running State", "ru": "Текущий режим"},
@@ -284,6 +288,28 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "air_sensor": {"en": "Air Sensor", "ru": "Датчик воздуха"},
         "floor_sensor": {"en": "Floor Sensor", "ru": "Датчик пола"},
     },
+    # Danfoss Icon per-room diagnostics; "RT" is the room thermostat. The floor sensor
+    # is wired and named explicitly, so the other faults are the thermostat's.
+    "room_status_code": {
+        "no_error": {"en": "No Error", "ru": "Нет ошибок"},
+        "missing_rt": {"en": "Missing Room Thermostat", "ru": "Нет связи"},
+        "rt_touch_error": {"en": "Room Thermostat Touch Error", "ru": "Отказ сенсорной панели"},
+        "floor_sensor_short_circuit": {"en": "Floor Sensor Short Circuit", "ru": "Замыкание датчика пола"},
+        "floor_sensor_disconnected": {"en": "Floor Sensor Disconnected", "ru": "Обрыв датчика пола"},
+    },
+    # What the underfloor heating regulates by. z2m does not spell out "comfort",
+    # so the label names the mode rather than claiming a mechanism.
+    "room_floor_sensor_mode": {
+        "comfort": {"en": "Comfort", "ru": "Комфортный"},
+        "floor_only": {"en": "Floor Only", "ru": "Только по полу"},
+        "dual_mode": {"en": "Dual Mode", "ru": "По воздуху и полу"},
+    },
+    # Standard ZCL setpointChangeSource: "externally" is a command over the network.
+    "setpoint_change_source": {
+        "manual": {"en": "Manual", "ru": "Вручную"},
+        "schedule": {"en": "Schedule", "ru": "По расписанию"},
+        "externally": {"en": "Externally", "ru": "Извне"},
+    },
     # --- Lights and indicators ---
     # First six are the standard ZCL effects, the rest are Philips Hue scenes.
     "effect": {
@@ -431,6 +457,11 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "battery_low": {"en": "Battery Low", "ru": "Батарея разряжена"},
         "usb": {"en": "USB"},
         "cable": {"en": "Cable", "ru": "Кабель"},
+    },
+    # In "scene" the key emits a scene action instead of driving the relay.
+    "switch_mode": {
+        "switch": {"en": "Switch", "ru": "Выключатель"},
+        "scene": {"en": "Scene", "ru": "Сцена"},
     },
     # --- Covers, motors and locks ---
     # Upper-case values are commands sent to a drive, lower-case ones report a state.
