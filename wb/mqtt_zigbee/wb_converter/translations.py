@@ -464,15 +464,16 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "scene": {"en": "Scene", "ru": "Сцена"},
     },
     # --- Covers, motors and locks ---
-    # Upper-case values are commands sent to a drive, lower-case ones report a state.
+    # On a cover this control is both read and written (z2m marks it STATE|SET), so the
+    # labels must read as the current position and as a command: «Открыто», not «Открыть».
     "state": {
-        "OPEN": {"en": "Open", "ru": "Открыть"},
-        "CLOSE": {"en": "Close", "ru": "Закрыть"},
-        "STOP": {"en": "Stop", "ru": "Остановить"},
+        "OPEN": {"en": "Open", "ru": "Открыто"},
+        "CLOSE": {"en": "Close", "ru": "Закрыто"},
+        "STOP": {"en": "Stop", "ru": "Стоп"},
         "open": {"en": "Open", "ru": "Открыто"},
         "close": {"en": "Close", "ru": "Закрыто"},
         "Closed": {"en": "Closed", "ru": "Закрыто"},
-        "stop": {"en": "Stop", "ru": "Остановлено"},
+        "stop": {"en": "Stop", "ru": "Стоп"},
         "idle": {"en": "Idle", "ru": "Бездействие"},
         "presence": {"en": "Presence", "ru": "Присутствие"},
         "absence": {"en": "Absence", "ru": "Отсутствие"},
