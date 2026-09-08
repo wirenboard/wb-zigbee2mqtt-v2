@@ -339,15 +339,15 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "none": {"en": "None", "ru": "Нет"},
         "off": {"en": "Off", "ru": "Выключено"},
     },
-    # "off/on" and "on/off" are «lit while the load is off» and the reverse, not two
-    # spellings of one value, so the labels have to spell the behaviour out.
+    # Which way round these light is undocumented (both go to Tuya's tuyaBacklightMode),
+    # so the labels transcribe the value instead of describing behaviour.
     "indicator_mode": {
         "off": {"en": "Off", "ru": "Выключен"},
         "on": {"en": "On", "ru": "Включён"},
-        "off/on": {"en": "Off/On", "ru": "Горит, когда нагрузка выключена"},
-        "on/off": {"en": "On/Off", "ru": "Горит, когда нагрузка включена"},
-        "off_on": {"en": "Off/On", "ru": "Горит, когда нагрузка выключена"},
-        "on_off": {"en": "On/Off", "ru": "Горит, когда нагрузка включена"},
+        "off/on": {"en": "Off/On", "ru": "Выкл./Вкл."},
+        "on/off": {"en": "On/Off", "ru": "Вкл./Выкл."},
+        "off_on": {"en": "Off/On", "ru": "Выкл./Вкл."},
+        "on_off": {"en": "On/Off", "ru": "Вкл./Выкл."},
         "always_on": {"en": "Always On", "ru": "Всегда включён"},
         "always_off": {"en": "Always Off", "ru": "Всегда выключен"},
         "consistent_with_load": {"en": "Consistent With Load", "ru": "По состоянию нагрузки"},
@@ -513,11 +513,13 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "year_day_schedule": {"en": "Year Day Schedule", "ru": "Расписание по датам"},
         "week_day_schedule": {"en": "Week Day Schedule", "ru": "Расписание по дням недели"},
     },
+    # ZCL OperationEventSource codes, copied verbatim by z2m. "rf" is a command over the
+    # Zigbee network — an app or a controller — not a physical remote.
     "action_source_name": {
         "keypad": {"en": "Keypad", "ru": "Клавиатура"},
         "rfid": {"en": "RFID", "ru": "RFID-метка"},
         "manual": {"en": "Manual", "ru": "Вручную"},
-        "rf": {"en": "RF", "ru": "Радиопульт"},
+        "rf": {"en": "RF", "ru": "По сети"},
     },
     # --- Sensors, sirens, power ---
     "sensitivity": {
