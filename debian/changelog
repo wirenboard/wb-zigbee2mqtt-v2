@@ -1,3 +1,9 @@
+wb-mqtt-zigbee (1.4.13) stable; urgency=medium
+
+  * Run the pytest suite during the deb build
+
+ -- Valerii Trofimov <valeriy.trofimov@wirenboard.com>  Tue, 08 Sep 2026 18:07:32 +0300
+
 wb-mqtt-zigbee (1.4.12) stable; urgency=medium
 
   * Translate enum control values, e.g. Switch Type and Power Type
