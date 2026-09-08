@@ -254,14 +254,25 @@ def _make_enum(feature: ExposeFeature) -> Optional[dict]:
     if not feature.values:
         return None
     labels = _enum_value_titles(feature.property)
-    enum: dict[str, dict[str, str]] = {}
-    for value in feature.values:
-        # Some converters report numeric values; the control value is always a string.
-        key = str(value)
-        label = labels.get(key)
+    # Some converters report numeric values; the control value is always a string.
+    return {str(value): _enum_value_label(str(value), labels) for value in feature.values}
+
+
+def _enum_value_label(value: str, labels: dict[str, dict[str, str]]) -> dict[str, str]:
+    """
+    Label for one enum value: curated, or composed from its endpoint base.
+
+    Values on multi-gang devices carry the button index the same way property names do
+    (on_1, brightness_stop_l2), so they are composed like titles: "Включение 1".
+    """
+    label = labels.get(value)
+    if label:
         # Copy: the tables are shared and must not be mutated through meta.
-        enum[key] = dict(label) if label else {"en": _humanize_enum_value(key)}
-    return enum
+        return dict(label)
+    base, suffix = _split_endpoint_suffix(value)
+    if suffix and base in labels:
+        return {lang: f"{text} {suffix}" for lang, text in labels[base].items()}
+    return {"en": _humanize_enum_value(value)}
 
 
 def _enum_value_titles(property_name: str) -> dict[str, dict[str, str]]:
