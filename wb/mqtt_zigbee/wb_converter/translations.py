@@ -387,7 +387,7 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
     # --- Switches and relays ---
     # "momentary" is a switch without detent, not something momentary.
     "switch_type": {
-        "toggle": {"en": "Toggle", "ru": "Двухпозиционный"},
+        "toggle": {"en": "Toggle", "ru": "С фиксацией"},
         "momentary": {"en": "Momentary", "ru": "Без фиксации"},
         "state": {"en": "State", "ru": "По положению"},
         "multifunction": {"en": "Multifunction", "ru": "Многофункциональный"},
