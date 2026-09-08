@@ -60,7 +60,7 @@ PROPERTY_TITLES: dict[str, dict[str, str]] = {
     "alarm": {"en": "Alarm", "ru": "Тревога"},
     # --- Lights ---
     "gradient_style": {"en": "Gradient Style", "ru": "Тип градиента"},
-    "on_color": {"en": "On Color", "ru": "Цвет во включённом состоянии"},
+    "on_color": {"en": "On Color", "ru": "Цвет во включенном состоянии"},
     "off_color": {"en": "Off Color", "ru": "Цвет в выключенном состоянии"},
     "state": {"en": "State", "ru": "Состояние"},
     "brightness": {"en": "Brightness", "ru": "Яркость"},
@@ -180,17 +180,17 @@ PROPERTY_TITLES: dict[str, dict[str, str]] = {
 # Colors shared by on_color/off_color; «Цвет» is masculine, hence the adjective forms.
 _COLORS: dict[str, dict[str, str]] = {
     "red": {"en": "Red", "ru": "Красный"},
-    "green": {"en": "Green", "ru": "Зелёный"},
+    "green": {"en": "Green", "ru": "Зеленый"},
     "blue": {"en": "Blue", "ru": "Синий"},
     "cyan": {"en": "Cyan", "ru": "Голубой"},
     "magenta": {"en": "Magenta", "ru": "Пурпурный"},
-    "yellow": {"en": "Yellow", "ru": "Жёлтый"},
+    "yellow": {"en": "Yellow", "ru": "Желтый"},
     "orange": {"en": "Orange", "ru": "Оранжевый"},
     "purple": {"en": "Purple", "ru": "Фиолетовый"},
     "white": {"en": "White", "ru": "Белый"},
-    "warm_white": {"en": "Warm White", "ru": "Тёплый белый"},
+    "warm_white": {"en": "Warm White", "ru": "Теплый белый"},
     "cold_white": {"en": "Cold White", "ru": "Холодный белый"},
-    "warm_yellow": {"en": "Warm Yellow", "ru": "Тёплый жёлтый"},
+    "warm_yellow": {"en": "Warm Yellow", "ru": "Теплый желтый"},
 }
 
 # en+ru labels for z2m enum VALUES, keyed by property then by value.
@@ -343,12 +343,12 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
     # so the labels transcribe the value instead of describing behaviour.
     "indicator_mode": {
         "off": {"en": "Off", "ru": "Выключен"},
-        "on": {"en": "On", "ru": "Включён"},
+        "on": {"en": "On", "ru": "Включен"},
         "off/on": {"en": "Off/On", "ru": "Выкл./Вкл."},
         "on/off": {"en": "On/Off", "ru": "Вкл./Выкл."},
         "off_on": {"en": "Off/On", "ru": "Выкл./Вкл."},
         "on_off": {"en": "On/Off", "ru": "Вкл./Выкл."},
-        "always_on": {"en": "Always On", "ru": "Всегда включён"},
+        "always_on": {"en": "Always On", "ru": "Всегда включен"},
         "always_off": {"en": "Always Off", "ru": "Всегда выключен"},
         "consistent_with_load": {"en": "Consistent With Load", "ru": "По состоянию нагрузки"},
         "reverse_with_load": {"en": "Reverse With Load", "ru": "Обратно состоянию нагрузки"},
@@ -372,7 +372,7 @@ ENUM_VALUE_TITLES: dict[str, dict[str, dict[str, str]]] = {
         "always_disabled": {"en": "Always Disabled", "ru": "Всегда выключен"},
         "disabled_if_no_errors": {"en": "Disabled If No Errors", "ru": "Выключен, если нет ошибок"},
         "disabled_untill_reboot": {"en": "Disabled Until Reboot", "ru": "Выключен до перезагрузки"},
-        "green_untill_reboot": {"en": "Green Until Reboot", "ru": "Зелёный до перезагрузки"},
+        "green_untill_reboot": {"en": "Green Until Reboot", "ru": "Зеленый до перезагрузки"},
         "red_untill_reboot": {"en": "Red Until Reboot", "ru": "Красный до перезагрузки"},
     },
     # Numeric values are a duration in seconds and stay as they are.
