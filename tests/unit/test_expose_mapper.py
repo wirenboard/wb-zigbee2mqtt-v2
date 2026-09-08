@@ -451,6 +451,28 @@ class TestMakeEnum:
             make_expose(property="switch_type", values=["rocker"])
         )
 
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            ("on_1", {"en": "On 1", "ru": "Включение 1"}),
+            ("brightness_stop_l2", {"en": "Brightness Stop L2", "ru": "Остановка изменения яркости L2"}),
+        ],
+    )
+    def test_button_index_is_composed_from_the_base_value(self, value, expected):
+        """Multi-gang devices number the value itself, not just the property"""
+        assert _make_enum(make_expose(property="action", values=[value])) == {value: expected}
+
+    def test_curated_value_wins_over_composing(self, monkeypatch):
+        """A curated label must survive even when the base plus index would differ"""
+        monkeypatch.setitem(
+            ENUM_VALUE_TITLES,
+            "probe",
+            {"on": {"en": "On", "ru": "Включение"}, "on_1": {"en": "First", "ru": "Первая клавиша"}},
+        )
+        assert _make_enum(make_expose(property="probe", values=["on_1"])) == {
+            "on_1": {"en": "First", "ru": "Первая клавиша"}
+        }
+
     def test_numeric_values_are_stringified(self):
         """A str method on a numeric value would raise and drop the whole device"""
         assert _make_enum(make_expose(property="melody", values=[1, 2])) == {
